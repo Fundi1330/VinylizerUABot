@@ -1,0 +1,4 @@
+{
+    "admins": [],
+    "supported_audio_types": ["mp3", "wav", "ogg"]
+}

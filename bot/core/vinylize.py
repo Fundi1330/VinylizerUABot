@@ -57,10 +57,15 @@ class Vynilizer:
         makedirs(self.get_cover_path(), exist_ok=True)
 
         video_clips = []
-        background = ImageClip(self.get_default_image()).with_opacity(0).with_duration(59)
+        result_duration = 59
+        audio = AudioFileClip(music_path)
+        if audio.duration < 59:
+            result_duration = audio.duration
+
+        background = ImageClip(self.get_default_image()).with_opacity(0).with_duration(result_duration)
         video_clips.append(background)
 
-        cover = ImageClip(cover_path).with_duration(59)
+        cover = ImageClip(cover_path).with_duration(result_duration)
         if cover_path == self.get_default_image():
             image_path = cover_path
         else:
@@ -77,21 +82,20 @@ class Vynilizer:
             video_clips.append(cover)
 
 
-        vinyl = ImageClip(image_path).with_duration(59).with_position(('center', 'center'))
+        vinyl = ImageClip(image_path).with_duration(result_duration).with_position(('center', 'center'))
         video_clips.append(vinyl)
 
 
         music_path = config.get('assets_path') + f'user_audios/{user.username}_{user.id}/{self.music}'
 
-        audio = AudioFileClip(music_path).with_duration(59)
+        
+        logger.info(audio.duration)
 
 
         result_path = self.get_result_path()
         makedirs(result_path, exist_ok=True)
 
-        
-
-        result = CompositeVideoClip(video_clips).with_duration(59).with_audio(audio)
+        result = CompositeVideoClip(video_clips).with_duration(result_duration).with_audio(audio)
         result = result.rotated(self.rotation)
         result = result.write_videofile(result_path + f'{self.music}.mp4', fps=24)
 

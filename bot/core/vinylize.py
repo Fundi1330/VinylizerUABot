@@ -61,6 +61,8 @@ class Vynilizer:
         audio = AudioFileClip(music_path)
         if audio.duration < 59:
             result_duration = audio.duration
+        else:
+            audio = audio.with_duration(result_duration)
 
         background = ImageClip(self.get_default_image()).with_opacity(0).with_duration(result_duration)
         video_clips.append(background)

@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 def load_config():
     logger.info(getcwd())
     with open('bot/config.json', 'r') as conf:
-        config = loads(conf.read())
+        config: dict = loads(conf.read())
 
-    config['project_dir'] = getcwd()
+    config['project_dir'] = getcwd() + '/bot'
+    config['assets_path'] = config.get('project_dir') + '/assets/'
 
     return config
 

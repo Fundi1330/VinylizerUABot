@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# project staff
+bot/assets/*
+!bot/assets/images/
+!bot/assets/images/*

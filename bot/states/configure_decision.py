@@ -1,7 +1,9 @@
-from telegram import Update, VideoNote, Video
+from telegram import Update, InlineKeyboardMarkup
+from bot.keyboards import image_keyboard
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
 from bot.core import Vynilizer
+from .album import ALBUM
 
 CONFIGURE_DECISION = 1
 
@@ -12,10 +14,12 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer()
     decision = query.data
 
+    music_name = context.user_data.get('music_name')
+    vynilizer = Vynilizer(update.effective_user, music=music_name)
+
     match decision:
         case 'Continue':
-            music_name = context.user_data.get('music_name')
-            vynilizer = Vynilizer(update.effective_user, music=music_name)
+            
 
             await context.bot.send_message(update.effective_chat.id, text='Ми розпочали вінілізацію вашого відео. Зачекайте трохи')
 
@@ -24,7 +28,17 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
             await context.bot.send_video_note(update.effective_chat.id, result, duration=59)
 
+            return ConversationHandler.END
+        case 'Configure':
+            text = '''
+            Яке зображення ви хочете використовувати?
+            '''
+            reply_markup = InlineKeyboardMarkup(image_keyboard)
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
             
-            
+            return ALBUM
+        case _:
+            return ConversationHandler.END
     
-    return ConversationHandler.END
+    

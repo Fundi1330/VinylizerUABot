@@ -1,11 +1,11 @@
 from .start import start
 from .unknown_handler import unknown
 from .help import help
-from .vynilize import vinylize as vinylize_command
+from .vinylize import vinylize as vinylize_command
 from bot.core import vinylize
 from .cancel import cancel
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
-from bot.states import CONFIGURE_DECISION, CONFIGURE, configure, configure_decision
+from bot.states import *
 
 def register_handlers(app: Application):
     start_handler = CommandHandler('start', start)
@@ -21,7 +21,12 @@ def register_handlers(app: Application):
         entry_points=[CommandHandler('vinylize', vinylize_command)],
         states={
             CONFIGURE: [MessageHandler(filters.AUDIO, configure)],
-            CONFIGURE_DECISION: [CallbackQueryHandler(configure_decision)]
+            CONFIGURE_DECISION: [CallbackQueryHandler(configure_decision)],
+            ALBUM: [CallbackQueryHandler(album)],
+            RPM: [CallbackQueryHandler(rpm)],
+            SAVE_IMAGE: [MessageHandler(filters.PHOTO, save_image)],
+            NOISE: [CallbackQueryHandler(noise)],
+            TIME: [CallbackQueryHandler(time_state)]
         },
         fallbacks=[CommandHandler("cancel", cancel)]
     )

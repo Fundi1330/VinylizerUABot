@@ -1,28 +1,29 @@
 from moviepy import ImageClip, AudioFileClip, CompositeVideoClip, CompositeAudioClip
 from PIL import Image
 from io import BytesIO
-from telegram import User
 from bot.config import config, logger
 from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path
 from stagger import read_tag, id3
+from stagger.errors import NoTagError
 from os import makedirs
-
-rotation_speed = None
 
 class Vynilizer:
 
-    def __init__(self, user: User, music: str, use_default_image: bool = False):
-        self.user = user
+    def __init__(self, username: str, userid: int, music: str, use_default_image: bool = False):
+        self.user = {
+            'username': username,
+            'id': userid
+        }
         self.music = music
         self.use_default_image = use_default_image
      
-    def rotation(self, k):
+    def __rotation(self, k):
         return -360 * self.rotation_speed * (k / self.duration)
     
     def get_album_cover(self, music_tag):
-        cover_path = get_cover_path(self.user.username, self.user.id)
+        cover_path = get_cover_path(self.user.get('username'), self.user.get('id'))
 
-        if id3.APIC in music_tag.keys():
+        if music_tag is not None and id3.APIC in music_tag.keys():
             music_data = music_tag[id3.APIC][0].data
             cover_img = Image.open(BytesIO(music_data))
             cover_path = cover_path + f'{self.music}.png'
@@ -33,14 +34,17 @@ class Vynilizer:
 
         return cover_path
 
-    async def vynilize(self, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 59):
+    def vynilize(self, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60):
         # load image
         image_path = None
         user = self.user
 
-        music_path = config.get('assets_path') + f'user_audios/{user.username}_{user.id}/{self.music}'
+        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{self.music}'
 
-        music_tag = read_tag(music_path)
+        try:
+            music_tag = read_tag(music_path)
+        except NoTagError:
+            music_tag = None
 
 
         if self.use_default_image:
@@ -55,12 +59,12 @@ class Vynilizer:
             cover_path = self.get_album_cover(music_tag)
         
 
-        makedirs(get_cover_path(self.user.username, self.user.id), exist_ok=True)
+        makedirs(get_cover_path(self.user.get('username'), self.user.get('id')), exist_ok=True)
 
         video_clips = []
-        result_duration = 59
+        result_duration = 60
         audio = AudioFileClip(music_path)
-        if audio.duration < 59:
+        if audio.duration < 60:
             result_duration = audio.duration
         end = result_duration + start - 1
         if end >= audio.duration:
@@ -94,12 +98,12 @@ class Vynilizer:
         video_clips.append(vinyl)
 
 
-        music_path = config.get('assets_path') + f'user_audios/{user.username}_{user.id}/{self.music}'
+        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{self.music}'
 
 
 
 
-        result_path = get_result_path(self.user.username, self.user.id)
+        result_path = get_result_path(self.user.get('username'), self.user.get('id'))
         makedirs(result_path, exist_ok=True)
 
         result = CompositeVideoClip(video_clips).with_duration(result_duration).with_audio(audio)
@@ -110,7 +114,7 @@ class Vynilizer:
             result = result.with_audio(audio_with_noise)
 
         self.rotation_speed = rpm
-        result = result.rotated(lambda k: self.rotation(k))
+        result = result.rotated(lambda k: self.__rotation(k))
         result = result.write_videofile(result_path + f'{self.music}.mp4', fps=24)
 
         return result_path + f'{self.music}.mp4'

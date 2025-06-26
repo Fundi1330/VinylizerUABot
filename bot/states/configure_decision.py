@@ -1,9 +1,10 @@
 from telegram import Update, InlineKeyboardMarkup
 from bot.keyboards import image_keyboard
 from telegram.ext import ContextTypes, ConversationHandler
-from bot.core.vynilize_utils import render_and_send_video
+from bot.core import q
 from .album import ALBUM
-import asyncio
+from bot.config import logger
+from bot.core.vinylizer_queue import RenderJob
 
 CONFIGURE_DECISION = 1
 
@@ -15,21 +16,21 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     music_name = context.user_data.get('music_name')
     username = update.effective_user.username
-    userid = update.effective_user.id
+    user_id = update.effective_user.id
 
     match decision:
         case 'Continue':
-            await context.bot.send_message(update.effective_chat.id, text='Ми розпочали вінілізацію вашого відео. Зачекайте трохи')
-            
-            asyncio.create_task(
-                render_and_send_video(
-                    context,
-                    update.effective_chat.id,
-                    username,
-                    userid,
-                    music_name
-                )
+            job = RenderJob(
+                context,
+                update.effective_chat.id,
+                username,
+                user_id,
+                music_name,
+                False
             )
+            await q.start_worker()
+            await q.add_job_to_queue(job, user_id, update, context)
+            
             return ConversationHandler.END
         case 'Configure':
             text = '''

@@ -2,7 +2,7 @@ from .start import start
 from .unknown_handler import unknown
 from .help import help
 from .vinylize import vinylize as vinylize_command
-from bot.core import vinylize
+from bot.core import vinylizer
 from .cancel import cancel
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
 from bot.states import *

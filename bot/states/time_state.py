@@ -1,8 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
-from bot.core.vynilize_utils import render_and_send_video
-import asyncio
+from bot.core.vinylizer_queue import RenderJob
+from bot.core import q
 
 TIME = 6
 
@@ -19,27 +19,25 @@ async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return 
 
     username = update.effective_user.username
-    userid = update.effective_user.id
+    user_id = update.effective_user.id
     music_name = context.user_data.get('music_name')
     album = context.user_data.get('album')
     noise = context.user_data.get('noise')
     rpm = context.user_data.get('rpm')
 
-
-    await context.bot.send_message(update.effective_chat.id, text='Ми розпочали вінілізацію вашого відео. Зачекайте трохи')
-
-    asyncio.create_task(
-        render_and_send_video(
-            context,
-            update.effective_chat.id,
-            username,
-            userid,
-            music_name,
-            album, 
-            noise, 
-            rpm, 
-            start_time
-        )
+    job = RenderJob(
+        context,
+        update.effective_chat.id,
+        username,
+        user_id,
+        music_name,
+        False,
+        album, 
+        noise, 
+        rpm, 
+        start_time
     )
+    await q.start_worker()
+    await q.add_job_to_queue(job, user_id, update, context)
 
     return ConversationHandler.END

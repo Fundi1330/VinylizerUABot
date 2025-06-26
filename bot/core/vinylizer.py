@@ -7,26 +7,20 @@ from stagger import read_tag, id3
 from stagger.errors import NoTagError
 from os import makedirs
 
-class Vynilizer:
+class Vinylizer:
+    def __init__(self):
+        pass
 
-    def __init__(self, username: str, userid: int, music: str, use_default_image: bool = False):
-        self.user = {
-            'username': username,
-            'id': userid
-        }
-        self.music = music
-        self.use_default_image = use_default_image
-     
     def __rotation(self, k):
         return -360 * self.rotation_speed * (k / self.duration)
     
-    def get_album_cover(self, music_tag):
+    def get_album_cover(self, music_tag, music):
         cover_path = get_cover_path(self.user.get('username'), self.user.get('id'))
 
         if music_tag is not None and id3.APIC in music_tag.keys():
             music_data = music_tag[id3.APIC][0].data
             cover_img = Image.open(BytesIO(music_data))
-            cover_path = cover_path + f'{self.music}.png'
+            cover_path = cover_path + f'{music}.png'
             cover_img.save(cover_path, format='PNG')
         else: 
             cover_img = Image.open(get_default_image())
@@ -34,20 +28,24 @@ class Vynilizer:
 
         return cover_path
 
-    def vynilize(self, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60):
-        # load image
+    def vinylize(self, username: str, user_id: int, music: str, use_default_image: bool = False, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60) -> str:
         image_path = None
+        music
+        self.user = {
+            'username': username,
+            'id': user_id
+        }
+
         user = self.user
 
-        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{self.music}'
+        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
 
         try:
             music_tag = read_tag(music_path)
         except NoTagError:
             music_tag = None
 
-
-        if self.use_default_image:
+        if use_default_image and music_tag is None:
             image_path = get_default_image()
         else:
             image_path = config.get('default_assets_path') + 'vinyl_no_center.png'
@@ -56,7 +54,7 @@ class Vynilizer:
         if album_cover:
             cover_path = album_cover
         else:
-            cover_path = self.get_album_cover(music_tag)
+            cover_path = self.get_album_cover(music_tag, music)
         
 
         makedirs(get_cover_path(self.user.get('username'), self.user.get('id')), exist_ok=True)
@@ -98,7 +96,7 @@ class Vynilizer:
         video_clips.append(vinyl)
 
 
-        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{self.music}'
+        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
 
 
 
@@ -115,6 +113,6 @@ class Vynilizer:
 
         self.rotation_speed = rpm
         result = result.rotated(lambda k: self.__rotation(k))
-        result = result.write_videofile(result_path + f'{self.music}.mp4', fps=24)
+        result = result.write_videofile(result_path + f'{music}.mp4', fps=24)
 
-        return result_path + f'{self.music}.mp4'
+        return result_path + f'{music}.mp4'

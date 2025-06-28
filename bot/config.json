@@ -1,4 +1,5 @@
 {
     "admins": [],
-    "supported_audio_types": ["mp3", "wav", "ogg"]
+    "supported_audio_types": ["mp3", "wav", "ogg"],
+    "database_path": "/bot/core/database/database.db"
 }

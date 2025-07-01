@@ -2,7 +2,7 @@ from .start import start
 from .unknown_handler import unknown
 from .help import help
 from .vinylize import vinylize as vinylize_command
-from bot.core import vinylizer
+from .premium import premium
 from .cancel import cancel
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
 from bot.states import *
@@ -10,12 +10,12 @@ from bot.states import *
 def register_handlers(app: Application):
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
-    vinylize_handler = CommandHandler('vinylize', vinylize_command)
+    premium_handler = CommandHandler('premium', premium)
 
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
     app.add_handler(start_handler)
     app.add_handler(help_handler)
-    # app.add_handler(MessageHandler(filters.AUDIO, configure))
+    app.add_handler(premium_handler)
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('vinylize', vinylize_command)],
@@ -30,8 +30,6 @@ def register_handlers(app: Application):
         },
         fallbacks=[CommandHandler("cancel", cancel)]
     )
-
-    #app.add_handler(vinylize_handler)
 
     app.add_handler(conv_handler)
 

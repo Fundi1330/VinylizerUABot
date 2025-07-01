@@ -1,5 +1,24 @@
 {
     "admins": [],
     "supported_audio_types": ["mp3", "wav", "ogg"],
-    "database_path": "/bot/core/database/database.db"
+    "database_path": "/bot/core/database/database.db",
+    "payload": "Test",
+    "plans": [
+        {
+            "length": 1,
+            "price": 89
+        },
+        {
+            "length": 3,
+            "price": 189
+        },
+        {
+            "length": 6,
+            "price": 349
+        },
+        {
+            "length": 12,
+            "price": 499
+        }
+    ]
 }

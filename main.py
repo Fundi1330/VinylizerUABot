@@ -4,12 +4,13 @@ from os import environ
 from bot.core import session, q
 import asyncio
 
-from bot import register_handlers
+from bot import register_handlers, regitster_payment_handlers
 
 def run_bot():
     application = ApplicationBuilder().token(environ.get('BOT_TOKEN')).build()
 
     register_handlers(application)
+    regitster_payment_handlers(application)
 
     application.run_polling()
 

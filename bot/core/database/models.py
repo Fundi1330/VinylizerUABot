@@ -2,7 +2,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, DateTime, ForeignKey, MetaData
 from typing import Optional
 import datetime
-from .database import engine
+from .database import engine, session
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -24,17 +24,34 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(unique=True)
     premium: Mapped[Optional['Premium']] = relationship(back_populates='user', cascade='all, delete-orphan')
 
+    @property
+    def is_premium(self):
+        return not self.check_if_premium_is_expired()
+    
+    def check_if_premium_is_expired(self):
+        '''Checks if premium of the user is expired. If so, it removes it'''
+        if self.premium is None:
+            return True
+        now = datetime.datetime.now()
+        difference = now - self.premium.expire_date
+        if difference.total_seconds() > 0:
+            self.premium = None
+            session.commit()
+            return True
+        return False
+
     def __repr__(self):
         return f'<User {self.telegram_id}>'
 
 class Premium(Base):
-    '''Contains data about premium, such as time purchased, expired, etc.'''
+    '''Contains data about premium, such as time it was expired, etc.'''
     __tablename__ = 'premiums'
     id: Mapped[int] = mapped_column(primary_key=True)
-    expire_date: Mapped[datetime.datetime]
 
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     user: Mapped['User'] = relationship(back_populates='premium', uselist=False)
+
+    expire_date: Mapped[datetime.datetime]
 
     def __repr__(self):
         return f'<Premium {self.id}>'

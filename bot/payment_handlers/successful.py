@@ -21,7 +21,6 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
     if premium is None:
         expire_date = datetime.datetime.now() + relativedelta(months=context.user_data['plan_duration'])
         premium = Premium(user_id=user.id, expire_date=expire_date)
-        premium.user = user
         session.add(premium)
         session.commit()
 

@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardMarkup
 from bot.keyboards import image_keyboard
 from telegram.ext import ContextTypes, ConversationHandler
-from bot.core import q
+from bot.core import get_queue
 from .album import ALBUM
 from bot.config import logger
 from bot.core.vinylizer_queue import RenderJob
@@ -18,6 +18,8 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
     username = update.effective_user.username
     user_id = update.effective_user.id
 
+    queue = get_queue(user_id)
+
     match decision:
         case 'Continue':
             job = RenderJob(
@@ -28,8 +30,8 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 music_name,
                 False
             )
-            await q.start_worker()
-            await q.add_job_to_queue(job, user_id, update, context)
+            await queue.start_worker()
+            await queue.add_job_to_queue(job, user_id, update, context)
             
             return ConversationHandler.END
         case 'Configure':

@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
 from bot.core.vinylizer_queue import RenderJob
-from bot.core import q
+from bot.core import get_queue
 
 TIME = 6
 
@@ -25,6 +25,8 @@ async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     noise = context.user_data.get('noise')
     rpm = context.user_data.get('rpm')
 
+    queue = get_queue(user_id)
+
     job = RenderJob(
         context,
         update.effective_chat.id,
@@ -37,7 +39,7 @@ async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         rpm, 
         start_time
     )
-    await q.start_worker()
-    await q.add_job_to_queue(job, user_id, update, context)
+    await queue.start_worker()
+    await queue.add_job_to_queue(job, user_id, update, context)
 
     return ConversationHandler.END

@@ -2,7 +2,7 @@ from telegram.ext import ContextTypes
 from telegram import Update
 import asyncio
 from bot.core.vinylizer_utils import render_and_send_video
-from concurrent.futures import ThreadPoolExecutor
+from bot.core.database import session, User
 from bot.config import logger
 
 class RenderJob:
@@ -20,13 +20,17 @@ class RenderJob:
 class VinylizerQueue(asyncio.Queue):
     def __init__(self, maxsize = 0):
         self.locks = dict()
+        self.task_amount = 0
         self.__running = False
         super().__init__(maxsize)
 
     async def start_worker(self):
         if not self.__running:
+            logger.info("Starting queue worker...")
             self.__running = True
-            asyncio.create_task(self.__worker())
+            asyncio.create_task(
+                self.__worker()
+            )
 
     async def stop_worker(self):
         self.__running = False
@@ -37,8 +41,7 @@ class VinylizerQueue(asyncio.Queue):
             job: RenderJob = await self.get()
 
             user_id = job.user.get('id')
-            lock: asyncio.Lock = self.locks.get(user_id, asyncio.Lock())
-            
+            lock: asyncio.Lock = self.get_lock_by_user_id(user_id)
             await render_and_send_video(
                 job.context,
                 job.chat_id,
@@ -48,7 +51,9 @@ class VinylizerQueue(asyncio.Queue):
                 *job.args,
                 **job.kwargs
             )
-            lock.release()
+            if lock.locked():
+                lock.release()
+            self.task_amount -= 1
 
         self.task_done()
         
@@ -60,29 +65,30 @@ class VinylizerQueue(asyncio.Queue):
         return lock
 
     def get_size(self):
-        return len([i for i in self.locks.values() if i.locked()]) - 1
+        return self.task_amount
     
     async def add_job_to_queue(self, job: RenderJob, user_id: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
         lock = self.get_lock_by_user_id(user_id)
-        size = self.qsize() - 1
+        size = self.get_size()
+        user = session.query(User).filter_by(telegram_id=user_id).one_or_none()
 
         
-        if lock.locked():
+        if lock.locked() and not user.is_premium:
             message = get_locked_message(size)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
         else:
-            await lock.acquire()
-
-            size = self.get_size()
-            
+            if not lock.locked():
+                await lock.acquire()
+            logger.info(f'User {user_id} added job to the queue. Queue size is: {self.get_size()}')
             if size > 0:
                 message = f'Вас було додано до черги. Перед вами ще {size} користувачів. Зачекайте трохи!'
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
             
             await self.put(job)
+            self.task_amount += 1
     
 def get_locked_message(size: int):
     message = f'Ви уже створили пластинку. Щоб рендерити кілька пластинок одночасно ви можете придбати преміум - /premium.'
     if size > 0:
-        message += f'Перед вами ще {size} людей'
+        message += f'\nПеред вами ще {size} людей'
     return message

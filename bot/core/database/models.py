@@ -3,6 +3,7 @@ from sqlalchemy import Integer, String, DateTime, ForeignKey, MetaData
 from typing import Optional
 import datetime
 from .database import engine, session
+from bot.config import logger
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -34,6 +35,7 @@ class User(Base):
             return True
         now = datetime.datetime.now()
         difference = now - self.premium.expire_date
+        
         if difference.total_seconds() > 0:
             self.premium = None
             session.commit()

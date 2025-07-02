@@ -9,6 +9,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 - /start - запустити бота.
 - /help - отримати це повідомлення.
 - /vinylize - розпочати процес вінілізації.
+- /premium - придбати преміум.
 '''
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text=help_message)

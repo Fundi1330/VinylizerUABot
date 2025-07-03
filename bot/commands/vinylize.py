@@ -16,7 +16,7 @@ async def vinylize(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
         return ConversationHandler.END
     text = '''
-    Надішліть аудіо або відеофайл(відео можуть завантажувати лише преміум користувачі)
+    Надішліть аудіо, відео або посилання на ютуб-відео
     '''
     await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 

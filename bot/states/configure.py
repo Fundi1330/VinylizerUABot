@@ -98,15 +98,15 @@ async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
     if update.message.audio:
         await download_audio(update.message.audio, context, update.effective_user)
-    if user.is_premium:
-        if update.message.video:
+    if update.message.video and user.is_premium:
             await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
-        elif update.message.text:
-            logger.info(update.message.text)
-            await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)
+    elif update.message.text and user.is_premium:
+        logger.info(update.message.text)
+        await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)
     else:
         text = '''
-
+            Дана функція доступна лише преміум-користувачам.
+            \n/premium
         '''
         await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         return ConversationHandler.END

@@ -12,7 +12,6 @@ def get_queue(user_id: int) -> VinylizerQueue:
     if user is None:
         raise Exception('The user is None')
     if user.is_premium:
-        logger.info('Using PremiumQueue')
         return pq
     
     return q

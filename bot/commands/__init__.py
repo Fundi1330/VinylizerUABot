@@ -20,7 +20,14 @@ def register_handlers(app: Application):
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('vinylize', vinylize_command)],
         states={
-            CONFIGURE: [MessageHandler(filters.AUDIO, configure)],
+            CONFIGURE: [
+                MessageHandler(filters.AUDIO, configure), 
+                MessageHandler(filters.VIDEO, configure),
+                MessageHandler(filters.TEXT & (filters.Regex(r'^https://www\.youtube\.com') |
+                                               filters.Regex(r'^https://www\.youtu\.be') |
+                                               filters.Regex(r'^https://youtube\.com') |
+                                               filters.Regex(r'^https://youtu\.be')
+                                              ), configure)],
             CONFIGURE_DECISION: [CallbackQueryHandler(configure_decision)],
             ALBUM: [CallbackQueryHandler(album)],
             RPM: [CallbackQueryHandler(rpm)],

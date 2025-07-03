@@ -79,7 +79,6 @@ class VinylizerQueue(asyncio.Queue):
         else:
             if not lock.locked():
                 await lock.acquire()
-            logger.info(f'User {user_id} added job to the queue. Queue size is: {self.get_size()}')
             if size > 0:
                 message = f'Вас було додано до черги. Перед вами ще {size} користувачів. Зачекайте трохи!'
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=message)

@@ -30,7 +30,6 @@ class Vinylizer:
 
     def vinylize(self, username: str, user_id: int, music: str, use_default_image: bool = False, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60) -> str:
         image_path = None
-        music
         self.user = {
             'username': username,
             'id': user_id

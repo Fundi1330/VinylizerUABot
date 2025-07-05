@@ -59,6 +59,10 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
         await context.bot.send_message(chat_id=chat_id, text=text)
 
 async def download_audio_from_youtube(link: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User):
+    text = '''
+        🔃Відео завантажується...
+    '''
+    message = await context.bot.send_message(chat_id=chat_id, text=text)
     audio_name = f'{uuid.uuid4()}.mp3'
     context.user_data['music_name'] = audio_name
     save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
@@ -73,16 +77,16 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
 
     try:
         subprocess.run(ytdlp_cmd, check=True)
-        text = '''
+        edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
-        await context.bot.send_message(chat_id=chat_id, text=text)
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while extracting audio from youtube video: {e}')
-        text = '''
+        edited_text = '''
             Під час завантаження відео виникла помилка!
         '''
-        await context.bot.send_message(chat_id=chat_id, text=text)
+    finally:
+        await context.bot.edit_message_text(chat_id=chat_id, text=edited_text, message_id=message.message_id)
     
 
 
@@ -99,7 +103,7 @@ async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.message.audio:
         await download_audio(update.message.audio, context, update.effective_user)
     if update.message.video and user.is_premium:
-            await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
+        await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
     elif update.message.text and user.is_premium:
         logger.info(update.message.text)
         await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)

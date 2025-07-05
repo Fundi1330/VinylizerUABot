@@ -74,14 +74,15 @@ class VinylizerQueue(asyncio.Queue):
 
         
         if lock.locked() and not user.is_premium:
-            message = get_locked_message(size)
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+            text = get_locked_message(size)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         else:
             if not lock.locked():
                 await lock.acquire()
             if size > 0:
-                message = f'Вас було додано до черги. Перед вами ще {size} користувачів. Зачекайте трохи!'
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+                text = f'Вас було додано до черги. Перед вами ще {size} користувачів. Зачекайте трохи!'
+                message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+                context.user_data['message_id'] = message.message_id
             
             await self.put(job)
             self.task_amount += 1

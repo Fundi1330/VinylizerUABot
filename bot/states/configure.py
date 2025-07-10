@@ -13,7 +13,7 @@ import uuid
 CONFIGURE = 0
 
 async def download_audio(audio: Audio, context: ContextTypes.DEFAULT_TYPE, user: User):
-    context.user_data['music_name'] = audio.name
+    context.user_data['music_name'] = audio.file_name
 
     file_id = audio.file_id
     new_file = await context.bot.get_file(file_id)
@@ -102,7 +102,7 @@ async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
     if update.message.audio:
         await download_audio(update.message.audio, context, update.effective_user)
-    if update.message.video and user.is_premium:
+    elif update.message.video and user.is_premium:
         await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
     elif update.message.text and user.is_premium:
         logger.info(update.message.text)

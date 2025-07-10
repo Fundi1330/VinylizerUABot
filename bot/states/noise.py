@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup, Message
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger, config
 from .time_state import TIME
@@ -9,18 +9,22 @@ NOISE = 5
 
 
 async def noise(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    '''Handles the result of the album image decision'''
+    '''Handles the result of the noise decision'''
     query = update.callback_query
     await query.answer()
     decision = query.data
     user = update.effective_user
 
+    message_id = context.user_data.get('message_id')
+
     if decision == 'Yes':
         context.user_data['noise'] = True
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='✅Вініловий шум буде додано до відео!' )
+        await context.bot.edit_message_text(text='✅Вініловий шум буде додано до відео!', chat_id=update.effective_chat.id, 
+                                message_id=message_id, reply_markup=None)
     else:
         context.user_data['noise'] = False
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='❌Вініловий шум НЕ буде додано до відео!' )
+        await context.bot.edit_message_text(text='❌Вініловий шум НЕ буде додано до відео!', chat_id=update.effective_chat.id,
+                                            message_id=message_id, reply_markup=None)
 
     music = context.user_data.get('music_name')
     music_path = config.get('assets_path') + f'user_audios/{user.username}_{user.id}/{music}'
@@ -30,9 +34,9 @@ async def noise(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text='Оберіть час початку звуку!',
+    message = await context.bot.send_message(chat_id=update.effective_chat.id, text='Оберіть час початку звуку!',
                                             reply_markup=reply_markup)
-    
+    context.user_data['message_id'] = message.message_id
 
     return TIME
     

@@ -20,12 +20,11 @@ async def save_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await photo.download_to_drive(album)
 
     reply_markup = InlineKeyboardMarkup(rpm_keyboard)
-
-    await context.bot.send_message(chat_id=update.effective_chat.id, text='✅Вибрано стандартне зображення!')
+    await context.bot.edit_message_text(text='✅Ваше зображення збережено!', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'))
             
-    await context.bot.send_message(chat_id=update.effective_chat.id, text='Тепер оберіть кількість обертів платівки',
+    message = await context.bot.send_message(chat_id=update.effective_chat.id, text='Тепер оберіть кількість обертів платівки',
                                     reply_markup=reply_markup)
-            
+    context.user_data['message_id'] = message.message_id        
     
     return RPM
     

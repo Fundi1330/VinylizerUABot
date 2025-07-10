@@ -40,8 +40,9 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
             '''
             reply_markup = InlineKeyboardMarkup(image_keyboard)
 
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
-            
+            message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
+            context.user_data['message_id'] = message.message_id
+
             return ALBUM
         case _:
             return ConversationHandler.END

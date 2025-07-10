@@ -8,7 +8,7 @@ TIME = 6
 
 
 async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    '''Handles the result of the user's decision'''
+    '''Handles the result of the user's start time decision and starts the vinylization process'''
     query = update.callback_query
     await query.answer()
     start_time = None
@@ -17,6 +17,9 @@ async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     except ValueError:
         logger.error('Start time should be a number')
         return 
+    
+    await context.bot.edit_message_text(text='✅Час початку обрано!', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'), reply_markup=None)
+    context.user_data['message_id'] = None
 
     username = update.effective_user.username
     user_id = update.effective_user.id

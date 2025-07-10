@@ -21,16 +21,16 @@ async def album(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             context.user_data['album'] = get_default_image()
 
             reply_markup = InlineKeyboardMarkup(rpm_keyboard)
-
-            await context.bot.send_message(chat_id=update.effective_chat.id, text='✅Вибрано стандартне зображення!')
+            await context.bot.edit_message_text(text='✅Вибрано стандартне зображення!', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'), reply_markup=None)
             
-            await context.bot.send_message(chat_id=update.effective_chat.id, text='Тепер оберіть кількість обертів платівки',
+            message = await context.bot.send_message(chat_id=update.effective_chat.id, text='Тепер оберіть кількість обертів платівки',
                                             reply_markup=reply_markup)
+            context.user_data['message_id'] = message.message_id
 
             return RPM
 
         case 'Custom':
-            await context.bot.send_message(chat_id=update.effective_chat.id, text='🖼️Будь ласка, завантажте зображення')
+            await context.bot.edit_message_text(text='🖼️Будь ласка, завантажте зображення', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'), reply_markup=None)
 
             return SAVE_IMAGE
             

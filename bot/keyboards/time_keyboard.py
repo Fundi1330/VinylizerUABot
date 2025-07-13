@@ -3,7 +3,8 @@ from bot.config import logger
 
 def generate_time_keyboard(audio_length: int) -> list:
     keyboard = [
-        [InlineKeyboardButton('🕛З початку', callback_data='0')]
+        [InlineKeyboardButton('🕛З початку', callback_data='0')],
+        [InlineKeyboardButton('🕰️Обрати час початку вручну', callback_data='manually')]
     ]
     periods = int(audio_length // 15)
     time = 0
@@ -33,5 +34,7 @@ def generate_time_keyboard(audio_length: int) -> list:
         if len(row) >= 2:
             keyboard.append(row)
             row = []
+    if len(row) > 0:
+        keyboard.append(row)
     
     return keyboard

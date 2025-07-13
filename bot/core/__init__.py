@@ -1,6 +1,6 @@
 from .vinylizer import Vinylizer
 from .vinylizer_utils import v
-from .vinylizer_queue import VinylizerQueue, get_locked_message
+from .vinylizer_queue import VinylizerQueue, RenderJob, get_locked_message
 from .database import session, User, Premium
 from bot.config import logger
 
@@ -15,4 +15,3 @@ def get_queue(user_id: int) -> VinylizerQueue:
         return pq
     
     return q
-

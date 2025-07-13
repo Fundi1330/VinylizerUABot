@@ -1,37 +1,54 @@
 from telegram import Update, InlineKeyboardMarkup, Audio, User
 from telegram.ext import ContextTypes, ConversationHandler
+from telegram.error import BadRequest
 from bot.core.database import User as UserModel
 from bot.core.database import session
 from bot.keyboards import configure_keyboard
-from .configure_decision import CONFIGURE_DECISION
+from .decision import CONFIGURE_DECISION
 from bot.config import config, logger
 from os import makedirs
 import os
 import subprocess
 import uuid
+from moviepy import AudioFileClip
 
 CONFIGURE = 0
 
-async def download_audio(audio: Audio, context: ContextTypes.DEFAULT_TYPE, user: User):
+async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
     context.user_data['music_name'] = audio.file_name
+    context.user_data['audio_duration'] = audio.duration
 
     file_id = audio.file_id
-    new_file = await context.bot.get_file(file_id)
+    try:
+        new_file = await context.bot.get_file(file_id)
+    except BadRequest as e:
+        text = '''
+            ❌Розмір аудіо занадто великий. Спробуйте зменшити його розмір
+        '''
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        return -1
     save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
     makedirs(save_folder, exist_ok=True)
 
     await new_file.download_to_drive(f'{save_folder}/{audio.file_name}')
+    return 0
 
-async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User):
+async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
     file_id = video.file_id
-    new_file = await context.bot.get_file(file_id)
+    try:
+        new_file = await context.bot.get_file(file_id)
+    except BadRequest as e:
+        text = '''
+            ❌Розмір відео занадто великий. Спробуйте зменшити його розмір, або ви можете завантажити його на ютуб
+        '''
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        return -1
     save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
     makedirs(save_folder, exist_ok=True)
 
     video_path = await new_file.download_to_drive(f'{save_folder}/{video.file_name}')
     audio_name = f'{video.file_name.split('.')[0]}.mp3'
-    audio_path = f'{save_folder}/{audio_name}'
-    context.user_data['music_name'] = audio_name
+    save_path = f'{save_folder}/{audio_name}'
     ffmpeg_cmd = [
         'ffmpeg',
         '-i', video_path,
@@ -40,12 +57,16 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
         '-ab', '192k',
         '-ar', '44100',
         '-y',
-        audio_path
+        save_path
 
     ]
 
     try:
         subprocess.run(ffmpeg_cmd, check=True)
+        context.user_data['music_name'] = audio_name
+        audio = AudioFileClip(save_path)
+        context.user_data['audio_duration'] = audio.duration
+        audio.close()
         text = '''
             📩Відео успішно завантажено!
         '''
@@ -57,41 +78,50 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
             Під час завантаження відео виникла помилка!
         '''
         await context.bot.send_message(chat_id=chat_id, text=text)
+        return -1
+    return 0
 
-async def download_audio_from_youtube(link: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User):
+async def download_audio_from_youtube(link: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
     text = '''
         🔃Відео завантажується...
     '''
     message = await context.bot.send_message(chat_id=chat_id, text=text)
     audio_name = f'{uuid.uuid4()}.mp3'
-    context.user_data['music_name'] = audio_name
+    
     save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
     makedirs(save_folder, exist_ok=True)
+    save_path = f'{save_folder}/{audio_name}'
     ytdlp_cmd = [
         'yt-dlp',
         '--extract-audio',
         '--audio-format', 'mp3',
-        '--output', f'{save_folder}/{audio_name}',
+        '--output', save_path,
         link
     ]
 
     try:
         subprocess.run(ytdlp_cmd, check=True)
+        context.user_data['music_name'] = audio_name
+        audio = AudioFileClip(save_path)
+        context.user_data['audio_duration'] = audio.duration
+        audio.close()
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
+        await message.edit_text(text=edited_text)
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while extracting audio from youtube video: {e}')
         edited_text = '''
             Під час завантаження відео виникла помилка!
         '''
-    finally:
-        await context.bot.edit_message_text(chat_id=chat_id, text=edited_text, message_id=message.message_id)
+        await message.edit_text(text=edited_text)
+        return -1
+    return 0
     
 
 
 
-async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Downloads music and asks user what he wants to do next'''
     user = session.query(UserModel).filter_by(telegram_id=update.effective_user.id).one_or_none()
     if user is None:
@@ -100,13 +130,13 @@ async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         '''
         await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         return ConversationHandler.END
+    result = None
     if update.message.audio:
-        await download_audio(update.message.audio, context, update.effective_user)
+        result = await download_audio(update.message.audio, update.effective_chat.id, context, update.effective_user)
     elif update.message.video and user.is_premium:
-        await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
+        result = await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
     elif update.message.text and user.is_premium:
-        logger.info(update.message.text)
-        await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)
+        result = await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)
     else:
         text = '''
             Дана функція доступна лише преміум-користувачам.
@@ -114,7 +144,8 @@ async def configure(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         '''
         await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         return ConversationHandler.END
-
+    if result is not None and result == -1:
+        return ConversationHandler.END
     
 
     text = '''

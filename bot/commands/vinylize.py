@@ -5,7 +5,7 @@ from bot.core import get_queue, get_locked_message
 from bot.core.database import session, User
 from bot.config import logger
 
-async def vinylize(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def vinylize_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     queue = get_queue(update.effective_user.id)
     lock = queue.get_lock_by_user_id(update.effective_user.id)
     size = queue.get_size()

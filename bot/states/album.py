@@ -9,7 +9,7 @@ from .save_image import SAVE_IMAGE
 ALBUM = 2
 
 
-async def album(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def album_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Handles the result of the album image decision'''
     query = update.callback_query
     await query.answer()
@@ -25,7 +25,7 @@ async def album(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             
             message = await context.bot.send_message(chat_id=update.effective_chat.id, text='Тепер оберіть кількість обертів платівки',
                                             reply_markup=reply_markup)
-            context.user_data['message_id'] = message.message_id
+            context.user_data['message_id'] = message.id
 
             return RPM
 

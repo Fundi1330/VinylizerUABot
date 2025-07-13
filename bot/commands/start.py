@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from bot.core import session, User
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = '''
 Вітаю👋! Я - бот-вінілізатор.
 Надішліть мені аудіо і я перетворю його у кружечок з вініловою пластинкою.

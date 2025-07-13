@@ -82,7 +82,7 @@ class VinylizerQueue(asyncio.Queue):
             if size > 0:
                 text = f'Вас було додано до черги. Перед вами ще {size} користувачів. Зачекайте трохи!'
                 message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-                context.user_data['message_id'] = message.message_id
+                context.user_data['message_id'] = message.id
             
             await self.put(job)
             self.task_amount += 1

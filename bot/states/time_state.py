@@ -1,19 +1,39 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
-from bot.core.vinylizer_queue import RenderJob
-from bot.core import get_queue
+from .manual_time_choice import MANUAL_TIME_CHOICE
+from bot.core.database import User, session
+from .state_utils import send_time_choice_message, create_queue_task
 
 TIME = 6
 
 
-async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def time_state_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Handles the result of the user's start time decision and starts the vinylization process'''
     query = update.callback_query
     await query.answer()
     start_time = None
+    user = session.query(User).filter_by(telegram_id=update.effective_user.id).one_or_none()
+    if user is None:
+        text = '''
+            Виникла помилка під час обробки вашого запиту
+        '''
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        return ConversationHandler.END
+
+    if query.data == 'manually' and user.is_premium:
+        text = 'Будь ласка, надішліть тайм-код початку пісні'
+        await context.bot.edit_message_text(chat_id=update.effective_chat.id, text=text, 
+                                            reply_markup=None, message_id=context.user_data.get('message_id'))
+        return MANUAL_TIME_CHOICE   
+    elif query.data == 'manually' and not user.is_premium:
+        text = 'Дана функція доступна лише преміум-користувачам. /premium'
+        await context.bot.edit_message_text(chat_id=update.effective_chat.id, text=text, 
+                                            reply_markup=None, message_id=context.user_data.get('message_id'))
+        return TIME   
     try:
         start_time = int(query.data)
+        context.user_data['start_time'] = start_time
     except ValueError:
         logger.error('Start time should be a number')
         return 
@@ -21,28 +41,6 @@ async def time_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await context.bot.edit_message_text(text='✅Час початку обрано!', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'), reply_markup=None)
     context.user_data['message_id'] = None
 
-    username = update.effective_user.username
-    user_id = update.effective_user.id
-    music_name = context.user_data.get('music_name')
-    album = context.user_data.get('album')
-    noise = context.user_data.get('noise')
-    rpm = context.user_data.get('rpm')
-
-    queue = get_queue(user_id)
-
-    job = RenderJob(
-        context,
-        update.effective_chat.id,
-        username,
-        user_id,
-        music_name,
-        False,
-        album, 
-        noise, 
-        rpm, 
-        start_time
-    )
-    await queue.start_worker()
-    await queue.add_job_to_queue(job, user_id, update, context)
+    await create_queue_task(update, context)
 
     return ConversationHandler.END

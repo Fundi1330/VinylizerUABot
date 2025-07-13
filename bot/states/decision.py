@@ -8,7 +8,7 @@ from bot.core.vinylizer_queue import RenderJob
 
 CONFIGURE_DECISION = 1
 
-async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Handles the result of the user's decision'''
     query = update.callback_query
     await query.answer()
@@ -41,7 +41,7 @@ async def configure_decision(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup = InlineKeyboardMarkup(image_keyboard)
 
             message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
-            context.user_data['message_id'] = message.message_id
+            context.user_data['message_id'] = message.id
 
             return ALBUM
         case _:

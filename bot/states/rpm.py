@@ -7,7 +7,7 @@ from .noise import NOISE
 RPM = 3
 
 
-async def rpm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def rpm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Handles the result of the user's rpm choice'''
     query = update.callback_query
     await query.answer()
@@ -27,7 +27,7 @@ async def rpm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     
     message = await context.bot.send_message(chat_id=update.effective_chat.id, text='Чи потрібно додавати вініловий шум?',
                                             reply_markup=reply_markup)
-    context.user_data['message_id'] = message.message_id
+    context.user_data['message_id'] = message.id
             
 
     return NOISE

@@ -21,13 +21,13 @@ def register_handlers(app: Application):
         entry_points=[CommandHandler('vinylize', vinylize_command)],
         states={
             CONFIGURE: [
-                MessageHandler(filters.AUDIO, file_download_callback), 
-                MessageHandler(filters.VIDEO, file_download_callback),
+                MessageHandler(filters.AUDIO, file_download_callback, block=False), 
+                MessageHandler(filters.VIDEO, file_download_callback, block=False),
                 MessageHandler(filters.TEXT & (filters.Regex(r'^https://www\.youtube\.com') |
                                                filters.Regex(r'^https://www\.youtu\.be') |
                                                filters.Regex(r'^https://youtube\.com') |
                                                filters.Regex(r'^https://youtu\.be')
-                                              ), file_download_callback)],
+                                              ), file_download_callback, block=False)],
             CONFIGURE_DECISION: [CallbackQueryHandler(decision_callback)],
             ALBUM: [CallbackQueryHandler(album_callback)],
             RPM: [CallbackQueryHandler(rpm_callback)],

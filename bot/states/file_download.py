@@ -11,11 +11,22 @@ import os
 import subprocess
 import uuid
 from moviepy import AudioFileClip
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 CONFIGURE = 0
 
+executor = ThreadPoolExecutor(max_workers=4)
+
+def run_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, audio_name: str, save_path: str):
+    subprocess.run(cmd_args, check=True)
+    context.user_data['music_name'] = audio_name
+    audio = AudioFileClip(save_path)
+    context.user_data['audio_duration'] = audio.duration
+    audio.close()
+
 async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
-    context.user_data['music_name'] = audio.file_name
+    context.user_data['music_name'] = f'{uuid.uuid4()}.{audio.file_name.split('.')[-1]}'
     context.user_data['audio_duration'] = audio.duration
 
     file_id = audio.file_id
@@ -34,6 +45,10 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
     return 0
 
 async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
+    text = '''
+        🔃Відео завантажується...
+    '''
+    message = await context.bot.send_message(chat_id=chat_id, text=text)
     file_id = video.file_id
     try:
         new_file = await context.bot.get_file(file_id)
@@ -47,7 +62,7 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
     makedirs(save_folder, exist_ok=True)
 
     video_path = await new_file.download_to_drive(f'{save_folder}/{video.file_name}')
-    audio_name = f'{video.file_name.split('.')[0]}.mp3'
+    audio_name = f'{uuid.uuid4()}.mp3'
     save_path = f'{save_folder}/{audio_name}'
     ffmpeg_cmd = [
         'ffmpeg',
@@ -62,15 +77,13 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
     ]
 
     try:
-        subprocess.run(ffmpeg_cmd, check=True)
-        context.user_data['music_name'] = audio_name
-        audio = AudioFileClip(save_path)
-        context.user_data['audio_duration'] = audio.duration
-        audio.close()
+        await asyncio.get_running_loop().run_in_executor(
+            executor, run_process, ffmpeg_cmd, context, audio_name, save_path
+        )
         text = '''
             📩Відео успішно завантажено!
         '''
-        await context.bot.send_message(chat_id=chat_id, text=text)
+        await message.edit_text(text=text)
         os.remove(video_path)
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while converting the video to audio: {e}')
@@ -100,11 +113,9 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
     ]
 
     try:
-        subprocess.run(ytdlp_cmd, check=True)
-        context.user_data['music_name'] = audio_name
-        audio = AudioFileClip(save_path)
-        context.user_data['audio_duration'] = audio.duration
-        audio.close()
+        await asyncio.get_running_loop().run_in_executor(
+            executor, run_process, ytdlp_cmd, context, audio_name, save_path
+        )
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
@@ -114,7 +125,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
         edited_text = '''
             Під час завантаження відео виникла помилка!
         '''
-        await message.edit_text(text=edited_text)
+        await context.bot.send_message(chat_id=chat_id, text=edited_text)
         return -1
     return 0
     

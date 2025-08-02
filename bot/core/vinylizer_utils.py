@@ -17,11 +17,7 @@ async def render_and_send_video(context: ContextTypes.DEFAULT_TYPE, chat_id: int
     loop = asyncio.get_running_loop()
     try:
         text = 'Ми розпочали вінілізацію вашого відео. Зачекайте трохи'
-        if context.user_data.get('message_id'):
-            await context.bot.edit_message_text(chat_id=chat_id, text=text, message_id=context.user_data['message_id'])
-            
-        else:
-            await context.bot.send_message(chat_id, text=text)
+        await context.bot.send_message(chat_id, text=text)
         result = await loop.run_in_executor(executor, render_video, *args, **kwargs)
         await context.bot.send_video_note(chat_id, result, duration=60)
         text = '''

@@ -1,8 +1,8 @@
-from telegram import Update, InlineKeyboardMarkup
-from bot.keyboards import image_keyboard
+from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.core import get_queue
-from .album import ALBUM
+from .select_vinyl import SELECT_VINYL
+from .state_utils import send_vinyl_choice_message
 from bot.config import logger
 from bot.core.vinylizer_queue import RenderJob
 
@@ -35,15 +35,8 @@ async def decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             
             return ConversationHandler.END
         case 'Configure':
-            text = '''
-            Яке зображення ви хочете використовувати?
-            '''
-            reply_markup = InlineKeyboardMarkup(image_keyboard)
-
-            message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
-            context.user_data['message_id'] = message.id
-
-            return ALBUM
+            await send_vinyl_choice_message(update, context)
+            return SELECT_VINYL
         case _:
             return ConversationHandler.END
     

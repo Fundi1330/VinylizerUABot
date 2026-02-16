@@ -1,0 +1,13 @@
+[
+    {
+        "name": "default",
+        "image": "vinyl/default_center.png",
+        "image_without_center": "vinyl/default_no_center.png",
+        "preview_image": "preview/default_preview.png",
+        "album_size": {
+            "x": 320,
+            "y": 320
+        },
+        "is_premium": false
+    }
+]

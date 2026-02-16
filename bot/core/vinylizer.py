@@ -2,7 +2,7 @@ from moviepy import ImageClip, AudioFileClip, CompositeVideoClip, CompositeAudio
 from PIL import Image
 from io import BytesIO
 from bot.config import config, logger
-from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path
+from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path, get_vinyl_by_name
 from stagger import read_tag, id3
 from stagger.errors import NoTagError
 from os import makedirs
@@ -28,7 +28,7 @@ class Vinylizer:
 
         return cover_path
 
-    def vinylize(self, username: str, user_id: int, music: str, use_default_image: bool = False, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60) -> str:
+    def vinylize(self, username: str, user_id: int, music: str, vinyl_name: str = 'default', use_default_image: bool = False, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60) -> str:
         image_path = None
         self.user = {
             'username': username,
@@ -36,6 +36,11 @@ class Vinylizer:
         }
 
         user = self.user
+
+        vinyl = get_vinyl_by_name(vinyl_name)
+        
+        if vinyl is None:
+            vinyl = get_vinyl_by_name('default')
 
         music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
 
@@ -47,7 +52,7 @@ class Vinylizer:
         if use_default_image and music_tag is None:
             image_path = get_default_image()
         else:
-            image_path = config.get('default_assets_path') + 'vinyl_no_center.png'
+            image_path = config.get('default_assets_path') + vinyl['image_without_center']
         
         
         if album_cover:
@@ -86,13 +91,14 @@ class Vinylizer:
             else:
                 x1, x2 = 0, w
                 y1, y2 = (h - w) // 2, (h + w) // 2 
-
-            cover = cover.cropped(x1=x1, y1=y1, x2=x2, y2=y2).resized((150, 150)).with_position(('center', 'center')) 
+            
+            album_size = vinyl['album_size']
+            cover = cover.cropped(x1=x1, y1=y1, x2=x2, y2=y2).resized((album_size['x'], album_size['y'])).with_position(('center', 'center')) 
             video_clips.append(cover)
 
 
-        vinyl = ImageClip(image_path).with_duration(result_duration).with_position(('center', 'center'))
-        video_clips.append(vinyl)
+        vinyl_clip = ImageClip(image_path).with_duration(result_duration).with_position(('center', 'center'))
+        video_clips.append(vinyl_clip)
 
 
         music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
@@ -103,7 +109,7 @@ class Vinylizer:
         result_path = get_result_path(self.user.get('username'), self.user.get('id'))
         makedirs(result_path, exist_ok=True)
 
-        result = CompositeVideoClip(video_clips).with_duration(result_duration).with_audio(audio)
+        result = CompositeVideoClip(video_clips).resized(new_size=(500, 500)).with_duration(result_duration).with_audio(audio)
 
         if add_vinyl_noise:
             noise = AudioFileClip(get_vinyl_noise()).with_duration(result_duration)

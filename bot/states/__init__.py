@@ -6,3 +6,4 @@ from .save_image import SAVE_IMAGE, save_image_callback
 from .noise import NOISE, noise_callback
 from .time_state import TIME, time_state_callback
 from .manual_time_choice import MANUAL_TIME_CHOICE, manual_time_choice_callback
+from .select_vinyl import SELECT_VINYL, select_vinyl_callback

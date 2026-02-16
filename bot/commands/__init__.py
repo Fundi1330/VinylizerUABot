@@ -29,6 +29,7 @@ def register_handlers(app: Application):
                                                filters.Regex(r'^https://youtu\.be')
                                               ), file_download_callback, block=False)],
             CONFIGURE_DECISION: [CallbackQueryHandler(decision_callback)],
+            SELECT_VINYL: [CallbackQueryHandler(select_vinyl_callback)],
             ALBUM: [CallbackQueryHandler(album_callback)],
             RPM: [CallbackQueryHandler(rpm_callback)],
             SAVE_IMAGE: [MessageHandler(filters.PHOTO, save_image_callback)],

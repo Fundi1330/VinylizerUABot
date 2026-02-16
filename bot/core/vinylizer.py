@@ -10,7 +10,7 @@ class Vinylizer:
     def __init__(self):
         pass
 
-    def __rotation(self, k):
+    def __rotation(self, k: int):
         return -360 * self.rotation_speed * (k / self.duration)
     
     def get_album_cover(self, music_tag: TinyTag, music: str):
@@ -27,7 +27,18 @@ class Vinylizer:
 
         return cover_path
 
-    def vinylize(self, username: str, user_id: int, music: str, vinyl_name: str = 'default', use_default_image: bool = False, album_cover: str = None, add_vinyl_noise: bool = False, rpm: int = 10, start: int = 0, end: int = 60) -> str:
+    def vinylize(self, 
+                 username: str, 
+                 user_id: int, 
+                 music: str, 
+                 vinyl_name: str = 'default', 
+                 use_default_image: bool = False, 
+                 album_cover: str = None, 
+                 add_vinyl_noise: bool = False, 
+                 rpm: int = 10, 
+                 start: int = 0, 
+                 end: int = 60
+                ) -> str:
         image_path = None
         self.user = {
             'username': username,

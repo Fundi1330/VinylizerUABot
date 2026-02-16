@@ -2,7 +2,7 @@ from telegram.ext import ContextTypes
 from telegram import Update
 import asyncio
 from bot.core.vinylizer_utils import render_and_send_video
-from bot.core.database import session, User
+from bot.core.database.utils import get_or_create_user
 from bot.config import logger
 
 class RenderJob:
@@ -70,7 +70,7 @@ class VinylizerQueue(asyncio.Queue):
     async def add_job_to_queue(self, job: RenderJob, user_id: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
         lock = self.get_lock_by_user_id(user_id)
         size = self.get_size()
-        user = session.query(User).filter_by(telegram_id=user_id).one_or_none()
+        user = get_or_create_user(user_id)
 
         
         if lock.locked() and not user.is_premium:

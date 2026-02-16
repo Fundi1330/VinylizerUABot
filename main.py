@@ -1,7 +1,7 @@
 import logging
 from telegram.ext import ApplicationBuilder
 from os import environ
-from bot.core import session, q, pq
+from bot.core import q, pq
 import asyncio
 
 from bot import register_handlers, register_payment_handlers
@@ -17,7 +17,6 @@ def run_bot():
 async def handle_teardown():
     await q.stop_worker()
     await pq.stop_worker()
-    session.close()
 
 if __name__ == '__main__':
     run_bot()

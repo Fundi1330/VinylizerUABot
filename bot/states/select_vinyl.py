@@ -4,8 +4,7 @@ from .album import ALBUM
 from bot.keyboards import image_keyboard
 from bot.core.utils import get_vinyl_list
 from .state_utils import send_vinyl_choice_message
-from bot.core import session
-from bot.core import User as UserModel
+from bot.core.database.utils import get_or_create_user
 from bot.config import logger
 
 SELECT_VINYL = 8 
@@ -16,7 +15,7 @@ async def select_vinyl_callback(update: Update, context: ContextTypes.DEFAULT_TY
     vinyl_ind = update.callback_query.data
     vinyl_list = get_vinyl_list()
     vinyl = vinyl_list[int(vinyl_ind)]
-    user = session.query(UserModel).filter_by(telegram_id=update.effective_user.id).first()
+    user = get_or_create_user(update.effective_user.id)
 
     if vinyl['is_premium'] and not user.is_premium:
         text = '''❌Даний стиль вінілу доступний лише преміум-користувачам /premium.

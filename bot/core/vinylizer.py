@@ -3,8 +3,7 @@ from PIL import Image
 from io import BytesIO
 from bot.config import config, logger
 from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path, get_vinyl_by_name
-from stagger import read_tag, id3
-from stagger.errors import NoTagError
+from tinytag import TinyTag, ParseError
 from os import makedirs
 
 class Vinylizer:
@@ -14,12 +13,12 @@ class Vinylizer:
     def __rotation(self, k):
         return -360 * self.rotation_speed * (k / self.duration)
     
-    def get_album_cover(self, music_tag, music):
+    def get_album_cover(self, music_tag: TinyTag, music: str):
         cover_path = get_cover_path(self.user.get('username'), self.user.get('id'))
 
-        if music_tag is not None and id3.APIC in music_tag.keys():
-            music_data = music_tag[id3.APIC][0].data
-            cover_img = Image.open(BytesIO(music_data))
+        if music_tag.images.any:
+            music_image = music_tag.images.any
+            cover_img = Image.open(BytesIO(music_image.data))
             cover_path = cover_path + f'{music}.png'
             cover_img.save(cover_path, format='PNG')
         else: 
@@ -42,11 +41,11 @@ class Vinylizer:
         if vinyl is None:
             vinyl = get_vinyl_by_name('default')
 
-        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
+        music_path = config.get('assets_path') + f"user_audios/{user.get('username')}_{user.get('id')}/{music}"
 
         try:
-            music_tag = read_tag(music_path)
-        except NoTagError:
+            music_tag = TinyTag.get(music_path)
+        except ParseError:
             music_tag = None
 
         if use_default_image and music_tag is None:
@@ -100,11 +99,7 @@ class Vinylizer:
         vinyl_clip = ImageClip(image_path).with_duration(result_duration).with_position(('center', 'center'))
         video_clips.append(vinyl_clip)
 
-
-        music_path = config.get('assets_path') + f'user_audios/{user.get('username')}_{user.get('id')}/{music}'
-
-
-
+        music_path = config.get('assets_path') + f"user_audios/{user.get('username')}_{user.get('id')}/{music}"
 
         result_path = get_result_path(self.user.get('username'), self.user.get('id'))
         makedirs(result_path, exist_ok=True)

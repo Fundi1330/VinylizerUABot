@@ -2,7 +2,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, DateTime, ForeignKey, MetaData
 from typing import Optional
 import datetime
-from .database import engine, session
+from .database import engine, get_session
 from bot.config import logger
 
 convention = {
@@ -23,7 +23,7 @@ class User(Base):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[int] = mapped_column(unique=True)
-    premium: Mapped[Optional['Premium']] = relationship(back_populates='user', cascade='all, delete-orphan')
+    premium: Mapped[Optional['Premium']] = relationship(back_populates='user', cascade='all, delete-orphan', lazy='joined')
 
     @property
     def is_premium(self):
@@ -35,9 +35,10 @@ class User(Base):
             return True
         now = datetime.datetime.now()
         difference = now - self.premium.expire_date
-        
+
         if difference.total_seconds() > 0:
             self.premium = None
+            session = get_session()
             session.commit()
             return True
         return False
@@ -51,7 +52,7 @@ class Premium(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
-    user: Mapped['User'] = relationship(back_populates='premium', uselist=False)
+    user: Mapped[User] = relationship(back_populates='premium', single_parent=True)
 
     expire_date: Mapped[datetime.datetime]
 

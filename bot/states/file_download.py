@@ -1,8 +1,7 @@
 from telegram import Update, InlineKeyboardMarkup, Audio, User
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.error import BadRequest
-from bot.core.database import User as UserModel
-from bot.core.database import session
+from bot.core.database.utils import get_or_create_user
 from bot.keyboards import configure_keyboard
 from .decision import CONFIGURE_DECISION
 from bot.config import config, logger
@@ -26,7 +25,7 @@ def run_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, audio_name: 
     audio.close()
 
 async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
-    context.user_data['music_name'] = f'{uuid.uuid4()}.{audio.file_name.split('.')[-1]}'
+    context.user_data['music_name'] = f"{uuid.uuid4()}.{audio.file_name.split('.')[-1]}"
     context.user_data['audio_duration'] = audio.duration
 
     file_id = audio.file_id
@@ -134,7 +133,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
 
 async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Downloads music and asks user what he wants to do next'''
-    user = session.query(UserModel).filter_by(telegram_id=update.effective_user.id).one_or_none()
+    user = get_or_create_user(update.effective_user.id)
     if user is None:
         text = '''
             Виникла помилка під час обробки вашого запиту

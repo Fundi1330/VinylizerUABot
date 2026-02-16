@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.core import Premium, User, session
+from bot.core import Premium
+from bot.core.database.utils import get_or_create_user
 import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -8,7 +9,7 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
     text = '''
         Дякуємо за покупку! Щасливого вам використання преміуму!
     '''
-    user = session.query(User).filter_by(telegram_id=update.effective_user.id).one_or_none()
+    user = get_or_create_user(update.effective_user.id)
     if user is None:
         text = '''
             Сталася помилка під час обробки вашого замовлення

@@ -13,7 +13,7 @@ async def save_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     '''Saves the album image'''
     photo = await update.message.photo[-1].get_file()
     save_folder = get_cover_path(update.effective_user.username, update.effective_user.id)
-    album = f'{save_folder}/{context.user_data.get('music_name')}'
+    album = f"{save_folder}/{context.user_data.get('music_name')}"
     context.user_data['album'] = album
     makedirs(save_folder, exist_ok=True)
 

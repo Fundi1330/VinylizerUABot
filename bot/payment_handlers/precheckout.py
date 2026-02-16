@@ -1,12 +1,12 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.config import config
-from bot.core import User, session
+from bot.core.database.utils import get_or_create_user
 
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     '''Confirms the payment details'''
     query = update.pre_checkout_query
-    user = session.query(User).filter_by(telegram_id=update.effective_user.id).one_or_none()
+    user = get_or_create_user(update.effective_user.id)
     
 
     if query.invoice_payload != config.get('payload') or user is None:

@@ -10,7 +10,7 @@ if plans is None:
 
 async def generate_premium_invoice_keyboard(bot: Bot):
     for plan in plans:
-        title = f'Купити преміум на {plan['length']} місяць'
+        title = f"Купити преміум на {plan['length']} місяць"
         link = await bot.create_invoice_link(
             title=title,
             description='Test',
@@ -19,7 +19,7 @@ async def generate_premium_invoice_keyboard(bot: Bot):
             prices=[LabeledPrice(title, plan['price'])]
         )
         keyboard.append(
-            [InlineKeyboardButton(title + f' за {plan['price']}⭐', url=link)],
+            [InlineKeyboardButton(title + f" за {plan['price']}⭐", url=link)],
         )
 
     return InlineKeyboardMarkup(keyboard)

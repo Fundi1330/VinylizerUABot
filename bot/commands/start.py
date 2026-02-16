@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.core import session, User
+from bot.core import User
+from bot.core.database import get_session
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = '''
@@ -9,11 +10,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Напишіть /vinylize, щоб розпочати.
     '''
     usr_id = update.effective_user.id
-    user = session.query(User).filter_by(telegram_id=usr_id).one_or_none()
-    if user is None:
-        user = User(telegram_id=usr_id)
-
-        session.add(user)
-        session.commit()
+    
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text=text)

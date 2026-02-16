@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
 from .manual_time_choice import MANUAL_TIME_CHOICE
-from bot.core.database import User, session
+from bot.core.database.utils import get_or_create_user
 from .state_utils import send_time_choice_message, create_queue_task
 
 TIME = 6
@@ -13,7 +13,7 @@ async def time_state_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
     start_time = None
-    user = session.query(User).filter_by(telegram_id=update.effective_user.id).one_or_none()
+    user = get_or_create_user(update.effective_user.id)
     if user is None:
         text = '''
             Виникла помилка під час обробки вашого запиту

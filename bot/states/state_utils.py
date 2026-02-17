@@ -43,10 +43,10 @@ async def create_queue_task(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user_id = update.effective_user.id
     music_name = context.user_data.get('music_name')
     album = context.user_data.get('album')
-    noise = context.user_data.get('noise')
-    rpm = context.user_data.get('rpm')
-    start_time = context.user_data.get('start_time')
-    vinyl = context.user_data.get('vinyl')
+    noise = context.user_data.get('noise', False)
+    rpm = context.user_data.get('rpm', 10)
+    start_time = context.user_data.get('start_time', 0)
+    vinyl = context.user_data.get('vinyl', 'default')
 
     queue = get_queue(user_id)
 

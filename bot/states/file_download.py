@@ -12,6 +12,7 @@ import uuid
 from moviepy import AudioFileClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from bot.core.utils import get_cover_path
 
 CONFIGURE = 0
 
@@ -98,27 +99,34 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
         🔃Відео завантажується...
     '''
     message = await context.bot.send_message(chat_id=chat_id, text=text)
-    audio_name = f'{uuid.uuid4()}.mp3'
+    audio_name = f'{uuid.uuid4()}'
     
-    save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
+    music_folder = f'bot/assets/user_audios/{user.username}_{user.id}'
+    makedirs(music_folder, exist_ok=True)
+    save_path = f'{music_folder}/{audio_name}'
+    save_folder = get_cover_path(user.username, user.id)
     makedirs(save_folder, exist_ok=True)
-    save_path = f'{save_folder}/{audio_name}'
     ytdlp_cmd = [
         'yt-dlp',
         '--extract-audio',
         '--audio-format', 'mp3',
+        '--write-thumbnail',
         '--output', save_path,
         link
     ]
 
     try:
         await asyncio.get_running_loop().run_in_executor(
-            executor, run_process, ytdlp_cmd, context, audio_name, save_path
+            executor, run_process, ytdlp_cmd, context, f'{audio_name}.mp3', f'{music_folder}/{audio_name}.mp3'
         )
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
         await message.edit_text(text=edited_text)
+        
+        album = f"{save_path}.webp"
+        context.user_data['album'] = album
+        
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while extracting audio from youtube video: {e}')
         edited_text = '''

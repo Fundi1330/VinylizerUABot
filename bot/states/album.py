@@ -18,8 +18,6 @@ async def album_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     match decision:
         case 'Default':
-            context.user_data['album'] = get_default_image()
-
             reply_markup = InlineKeyboardMarkup(rpm_keyboard)
             await context.bot.edit_message_text(text='✅Вибрано стандартне зображення!', chat_id=update.effective_chat.id,  message_id=context.user_data.get('message_id'), reply_markup=None)
             

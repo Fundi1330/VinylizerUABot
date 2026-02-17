@@ -64,7 +64,6 @@ class Vinylizer:
         else:
             image_path = config.get('default_assets_path') + vinyl['image_without_center']
         
-        
         if album_cover:
             cover_path = album_cover
         else:

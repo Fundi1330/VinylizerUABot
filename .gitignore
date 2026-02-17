@@ -178,5 +178,4 @@ cython_debug/
 bot/assets/*
 !bot/assets/default/
 !bot/assets/default/*
-migrations/versions
 bot/core/database/database.db

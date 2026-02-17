@@ -1,9 +1,8 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, DateTime, ForeignKey, MetaData
+from sqlalchemy import ForeignKey, MetaData
 from typing import Optional
 import datetime
 from .database import engine, get_session
-from bot.config import logger
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -21,8 +20,7 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = 'users'
-    id: Mapped[int] = mapped_column(primary_key=True)
-    telegram_id: Mapped[int] = mapped_column(unique=True)
+    telegram_id: Mapped[int] = mapped_column(unique=True, primary_key=True)
     premium: Mapped[Optional['Premium']] = relationship(back_populates='user', cascade='all, delete-orphan', lazy='joined')
 
     @property
@@ -49,14 +47,12 @@ class User(Base):
 class Premium(Base):
     '''Contains data about premium, such as time it was expired, etc.'''
     __tablename__ = 'premiums'
-    id: Mapped[int] = mapped_column(primary_key=True)
-
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.telegram_id'), primary_key=True)
     user: Mapped[User] = relationship(back_populates='premium', single_parent=True)
 
     expire_date: Mapped[datetime.datetime]
 
     def __repr__(self):
-        return f'<Premium {self.id}>'
+        return f'<Premium {self.user_id}>'
     
 Base.metadata.create_all(bind=engine)

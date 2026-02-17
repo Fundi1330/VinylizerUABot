@@ -17,7 +17,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option('sqlalchemy.url', f'sqlite://{bot_config.get('database_path')}')
+config.set_main_option('sqlalchemy.url', f"sqlite://{bot_config.get('database_path')}")
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -48,6 +48,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        render_as_batch=True,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -70,7 +71,8 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata,
+            render_as_batch=True,
         )
 
         with context.begin_transaction():

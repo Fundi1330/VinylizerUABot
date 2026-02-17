@@ -32,9 +32,10 @@ async def send_vinyl_choice_message(update: Update, context: ContextTypes.DEFAUL
             media.append(InputMediaPhoto(media=f.read()))
 
 
-    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=media)
+    media = await context.bot.send_media_group(chat_id=update.effective_chat.id, media=media)
     message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
     context.user_data['message_id'] = message.id
+    context.user_data['media'] = media
 
 async def create_queue_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     '''Adds task to the vinylizer queue. Used in advanced vinylization configuration'''

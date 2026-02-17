@@ -163,6 +163,7 @@ async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_T
     '''
     reply_markup = InlineKeyboardMarkup(configure_keyboard)
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
+    message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
+    context.user_data['message_id'] = message.id
 
     return CONFIGURE_DECISION

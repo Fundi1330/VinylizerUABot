@@ -28,7 +28,8 @@ async def select_vinyl_callback(update: Update, context: ContextTypes.DEFAULT_TY
     text = '''
     ✅Стиль вінілу успішно обрано!
     '''
-
+    for v in context.user_data.pop('media'):
+        await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=v.id)
     await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=context.user_data.get('message_id'),
                                         text=text)
 

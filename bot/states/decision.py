@@ -19,6 +19,7 @@ async def decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user_id = update.effective_user.id
 
     queue = get_queue(user_id)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=context.user_data.pop('message_id'))
 
     match decision:
         case 'Continue':

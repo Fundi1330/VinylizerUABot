@@ -4,7 +4,7 @@ from io import BytesIO
 from bot.config import config, logger
 from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path, get_vinyl_by_name
 from tinytag import TinyTag, ParseError
-from os import makedirs
+import os
 
 class Vinylizer:
     def __init__(self):
@@ -72,7 +72,7 @@ class Vinylizer:
             cover_path = self.get_album_cover(user, music_tag, music)
         
 
-        makedirs(get_cover_path(user['username'], user['id']), exist_ok=True)
+        os.makedirs(get_cover_path(user['username'], user['id']), exist_ok=True)
 
         video_clips: list[VideoClip] = []
         result_duration = 60
@@ -126,7 +126,7 @@ class Vinylizer:
         music_path = config.get('assets_path') + f"user_audios/{user['username']}_{user['id']}/{music}"
 
         result_path = get_result_path(user['username'], user['id'])
-        makedirs(result_path, exist_ok=True)
+        os.makedirs(result_path, exist_ok=True)
         output_path = result_path + f'/{music}.mp4'
         for c in video_clips:
             c.set_rotation(lambda k: self._rotate(k, rpm, 60), expand=False) # Tie speed to minutes, and not the audio duration as it was before
@@ -147,5 +147,9 @@ class Vinylizer:
             writer.add_clip(noise)
 
         writer.write()
+
+        if album_cover:
+            os.remove(album_cover)
+        os.remove(music_path)
 
         return output_path

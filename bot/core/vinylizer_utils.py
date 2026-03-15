@@ -5,6 +5,7 @@ import asyncio
 from bot.config import logger
 from bot.core.vinylizer import Vinylizer
 import traceback
+import os
 
 v = Vinylizer()
 
@@ -23,6 +24,7 @@ async def render_and_send_video(context: ContextTypes.DEFAULT_TYPE, chat_id: int
         text = '''
             Ваше відео готове! Рекомендуємо придбати преміум /premium для кращого користувацького досвіду.
         '''
+        os.remove(result)
         await context.bot.send_message(chat_id, text=text)
     except Exception as e:
         logger.error(f"Error rendering video: {traceback.format_exc()}")

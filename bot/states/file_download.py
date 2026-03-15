@@ -12,7 +12,8 @@ import uuid
 from movielite import AudioClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from bot.core.utils import get_user_audio_path
+from bot.core.utils import get_user_audio_path, get_cover_path
+from functools import partial
 from pathlib import Path
 
 CONFIGURE = 0
@@ -102,27 +103,49 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
     
     audio_folder = get_user_audio_path(user.username, user.id)
     makedirs(audio_folder, exist_ok=True)
-    save_path = str(Path(audio_folder) / audio_name)
-    ytdlp_cmd = [
+    audio_save_path = str(Path(audio_folder) / audio_name)
+    ytdlp_audio_cmd = [
         'yt-dlp',
         '--extract-audio',
         '--audio-format', 'mp3',
+        '--output', audio_save_path,
+        link
+    ]
+    album_folder = get_cover_path(user.username, user.id)
+    album_save_path = str(Path(f"{str(Path(album_folder) / audio_name)}"))
+    ytdlp_thumbnail_cmd = [
+        'yt-dlp',
         '--write-thumbnail',
-        '--output', save_path,
+        '--skip-download',
+        '--output', album_save_path,
         link
     ]
 
     try:
-        await asyncio.get_running_loop().run_in_executor(
-            executor, run_save_audio_process, ytdlp_cmd, context, f'{save_path}.mp3'
+        await asyncio.gather(
+            asyncio.get_running_loop().run_in_executor(
+                executor, 
+                run_save_audio_process, 
+                ytdlp_audio_cmd, 
+                context, 
+                f'{audio_save_path}.mp3'
+            ),
+            asyncio.get_running_loop().run_in_executor(
+                executor, 
+                partial(
+                    subprocess.run, 
+                    ytdlp_thumbnail_cmd, 
+                    check=True
+                )
+            )
         )
+        
+        context.user_data['album_path'] = f'{album_save_path}.webp'
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
         await message.edit_text(text=edited_text)
         
-        album_path = str(Path(f"{str(Path(audio_folder) / audio_name)}.webp"))
-        context.user_data['album_path'] = album_path
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while extracting audio from youtube video: {e}')
         edited_text = '''

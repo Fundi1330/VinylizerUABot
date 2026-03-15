@@ -10,11 +10,11 @@ class Vinylizer:
     def __init__(self):
         pass
 
-    def __rotation(self, k: int):
-        return -360 * self.rotation_speed * (k / self.duration)
+    def _rotate(self, k: int, speed: int, per: int):
+        return -360 * speed * (k / per)
     
-    def get_album_cover(self, music_tag: TinyTag, music: str):
-        cover_path = get_cover_path(self.user.get('username'), self.user.get('id'))
+    def get_album_cover(self, user: dict, music_tag: TinyTag, music: str):
+        cover_path = get_cover_path(user['username'], user['id'])
 
         if music_tag.images.any:
             music_image = music_tag.images.any
@@ -38,22 +38,23 @@ class Vinylizer:
         add_vinyl_noise: bool = False, 
         rpm: int = 10, 
         start: int = 0, 
-        end: int = 60
+        end: int = 60,
+        size: tuple[float] = (500, 500)
     ) -> str:
         image_path = None
-        self.user = {
+        user = {
             'username': username,
             'id': user_id
         }
 
-        user = self.user
+        user = user
 
         vinyl = get_vinyl_by_name(vinyl_name)
         
         if vinyl is None:
             vinyl = get_vinyl_by_name('default')
 
-        music_path = config.get('assets_path') + f"user_audios/{user.get('username')}_{user.get('id')}/{music}"
+        music_path = config.get('assets_path') + f"user_audios/{user['username']}_{user['id']}/{music}"
 
         try:
             music_tag = TinyTag.get(music_path)
@@ -68,10 +69,10 @@ class Vinylizer:
         if album_cover:
             cover_path = album_cover
         else:
-            cover_path = self.get_album_cover(music_tag, music)
+            cover_path = self.get_album_cover(user, music_tag, music)
         
 
-        makedirs(get_cover_path(self.user.get('username'), self.user.get('id')), exist_ok=True)
+        makedirs(get_cover_path(user['username'], user['id']), exist_ok=True)
 
         video_clips: list[VideoClip] = []
         result_duration = 60
@@ -92,7 +93,7 @@ class Vinylizer:
         background.set_duration(result_duration)
         background.set_opacity(0)
         background.set_position((0, 0))
-        background.set_size(500, 500)
+        background.set_size(*size)
         h, w = background.size
         cx, cy = h / 2, w / 2
         video_clips.append(background)
@@ -123,23 +124,21 @@ class Vinylizer:
             duration=result_duration
         )
         vinyl_clip.set_position((0, 0))
-        vinyl_clip.set_size(500, 500)
+        vinyl_clip.set_size(*size)
         video_clips.append(vinyl_clip)
 
-        music_path = config.get('assets_path') + f"user_audios/{user.get('username')}_{user.get('id')}/{music}"
+        music_path = config.get('assets_path') + f"user_audios/{user['username']}_{user['id']}/{music}"
 
-        result_path = get_result_path(self.user.get('username'), self.user.get('id'))
+        result_path = get_result_path(user['username'], user['id'])
         makedirs(result_path, exist_ok=True)
-        output_path = result_path + f'{music}.mp4'
-        print(rpm)
-        self.rotation_speed = rpm
+        output_path = result_path + f'/{music}.mp4'
         for c in video_clips:
-            c.set_rotation(lambda k: self.__rotation(k), expand=False)
+            c.set_rotation(lambda k: self._rotate(k, rpm, 60), expand=False) # Tie speed to minutes, and not the audio duration as it was before
 
         writer = VideoWriter(
             output_path=output_path,
             duration=result_duration,
-            size=(500, 500)
+            size=(size)
         )
         writer.add_clips(video_clips)
         writer.add_clip(audio)
@@ -152,6 +151,5 @@ class Vinylizer:
             writer.add_clip(noise)
 
         writer.write()
-
 
         return output_path

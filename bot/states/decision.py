@@ -21,7 +21,10 @@ async def decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     match decision:
         case 'Continue':
-            await create_queue_task(update, context)
+            try:
+                await create_queue_task(update, context)
+            except KeyError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text='Не вдалося знайти музичний файл')
             
             return ConversationHandler.END
         case 'Configure':

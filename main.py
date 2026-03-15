@@ -3,6 +3,9 @@ from telegram.ext import ApplicationBuilder
 from os import environ
 from bot.core import q, pq
 import asyncio
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 from bot import register_handlers, register_payment_handlers
 

@@ -82,11 +82,7 @@ class Vinylizer:
         end = result_duration + start - 1
         if end >= audio.duration:
             result_duration = audio.duration - start - 0.2
-        
-        self.duration = result_duration
-
-        audio.set_start(start)
-        audio.set_end(end)
+        audio = audio.subclip(start, end)
         audio.set_duration(result_duration)
 
         background = ImageClip(get_default_image())

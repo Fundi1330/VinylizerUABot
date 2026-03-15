@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import ContextTypes
 from bot.keyboards import generate_time_keyboard
 from bot.config import config
-from moviepy import AudioFileClip
+from movielite import AudioClip
 from bot.core import get_queue, RenderJob
 from bot.keyboards import vinyl_keyboard
 from bot.core.utils import get_vinyl_list
@@ -11,7 +11,7 @@ from pathlib import Path
 async def send_time_choice_message(update: Update, context: ContextTypes.DEFAULT_TYPE, user):
     music = context.user_data.get('music_name')
     music_path = config.get('assets_path') + f'user_audios/{user.username}_{user.id}/{music}'
-    audio_length = AudioFileClip(music_path).duration
+    audio_length = AudioClip(music_path).duration
     
     reply_markup = InlineKeyboardMarkup(generate_time_keyboard(audio_length))
 
@@ -41,12 +41,12 @@ async def create_queue_task(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     '''Adds task to the vinylizer queue. Used in advanced vinylization configuration'''
     username = update.effective_user.username
     user_id = update.effective_user.id
-    music_name = context.user_data.get('music_name')
-    album = context.user_data.get('album')
-    noise = context.user_data.get('noise', False)
-    rpm = context.user_data.get('rpm', 10)
-    start_time = context.user_data.get('start_time', 0)
-    vinyl = context.user_data.get('vinyl', 'default')
+    music_name = context.user_data.pop('music_name')
+    album = context.user_data.pop('album', None)
+    noise = context.user_data.pop('noise', False)
+    rpm = context.user_data.pop('rpm', 10)
+    start_time = context.user_data.pop('start_time', 0)
+    vinyl = context.user_data.pop('vinyl', 'default')
 
     queue = get_queue(user_id)
 

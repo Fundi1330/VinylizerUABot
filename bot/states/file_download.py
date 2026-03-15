@@ -9,7 +9,7 @@ from os import makedirs
 import os
 import subprocess
 import uuid
-from moviepy import AudioFileClip
+from movielite import AudioClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from bot.core.utils import get_cover_path
@@ -21,9 +21,8 @@ executor = ThreadPoolExecutor(max_workers=4)
 def run_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, audio_name: str, save_path: str):
     subprocess.run(cmd_args, check=True)
     context.user_data['music_name'] = audio_name
-    audio = AudioFileClip(save_path)
+    audio = AudioClip(save_path)
     context.user_data['audio_duration'] = audio.duration
-    audio.close()
 
 async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
     context.user_data['music_name'] = f"{uuid.uuid4()}.{audio.file_name.split('.')[-1]}"

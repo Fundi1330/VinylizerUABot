@@ -1,4 +1,4 @@
-from moviepy import ImageClip, AudioFileClip, CompositeVideoClip, CompositeAudioClip
+from movielite import ImageClip, AudioClip, VideoWriter, VideoClip
 from PIL import Image
 from io import BytesIO
 from bot.config import config, logger
@@ -27,18 +27,19 @@ class Vinylizer:
 
         return cover_path
 
-    def vinylize(self, 
-                 username: str, 
-                 user_id: int, 
-                 music: str, 
-                 vinyl_name: str = 'default', 
-                 use_default_image: bool = False, 
-                 album_cover: str = None, 
-                 add_vinyl_noise: bool = False, 
-                 rpm: int = 10, 
-                 start: int = 0, 
-                 end: int = 60
-                ) -> str:
+    def vinylize(
+        self, 
+        username: str, 
+        user_id: int, 
+        music: str, 
+        vinyl_name: str = 'default', 
+        use_default_image: bool = False, 
+        album_cover: str = None, 
+        add_vinyl_noise: bool = False, 
+        rpm: int = 10, 
+        start: int = 0, 
+        end: int = 60
+    ) -> str:
         image_path = None
         self.user = {
             'username': username,
@@ -72,9 +73,9 @@ class Vinylizer:
 
         makedirs(get_cover_path(self.user.get('username'), self.user.get('id')), exist_ok=True)
 
-        video_clips = []
+        video_clips: list[VideoClip] = []
         result_duration = 60
-        audio = AudioFileClip(music_path)
+        audio = AudioClip(music_path)
         if audio.duration < 60:
             result_duration = audio.duration
         end = result_duration + start - 1
@@ -83,46 +84,74 @@ class Vinylizer:
         
         self.duration = result_duration
 
-        audio = audio.subclipped(start, end).with_duration(result_duration)
+        audio.set_start(start)
+        audio.set_end(end)
+        audio.set_duration(result_duration)
 
-        background = ImageClip(get_default_image()).with_opacity(0).with_duration(result_duration)
+        background = ImageClip(get_default_image())
+        background.set_duration(result_duration)
+        background.set_opacity(0)
+        background.set_position((0, 0))
+        background.set_size(500, 500)
+        h, w = background.size
+        cx, cy = h / 2, w / 2
         video_clips.append(background)
 
-        cover = ImageClip(cover_path).with_duration(result_duration)
+        cover = ImageClip(
+            source=cover_path,
+            duration=result_duration
+        )
+
         if cover_path == get_default_image():
             image_path = cover_path
         else:
-            w, h = cover.size
-
-            if w > h:
-                x1, x2 = (w - h) // 2, (w + h) // 2 
-                y1, y2 = 0, h 
-            else:
-                x1, x2 = 0, w
-                y1, y2 = (h - w) // 2, (h + w) // 2 
-            
+            aw, ah = cover.size
             album_size = vinyl['album_size']
-            cover = cover.cropped(x1=x1, y1=y1, x2=x2, y2=y2).resized((album_size['x'], album_size['y'])).with_position(('center', 'center')) 
+            ax = album_size['x']
+            ay = album_size['y']
+            scale = min(ax, ay) / max(aw, ah)
+            cover.set_scale(scale)
+            aw, ah = cover.size[0] * scale, cover.size[1] * scale
+            cover_x = cx - aw / 2
+            cover_y = cy - ah / 2
+            cover.set_position((cover_x, cover_y))
             video_clips.append(cover)
 
 
-        vinyl_clip = ImageClip(image_path).with_duration(result_duration).with_position(('center', 'center'))
+        vinyl_clip = ImageClip(
+            source=image_path,
+            duration=result_duration
+        )
+        vinyl_clip.set_position((0, 0))
+        vinyl_clip.set_size(500, 500)
         video_clips.append(vinyl_clip)
 
         music_path = config.get('assets_path') + f"user_audios/{user.get('username')}_{user.get('id')}/{music}"
 
         result_path = get_result_path(self.user.get('username'), self.user.get('id'))
         makedirs(result_path, exist_ok=True)
+        output_path = result_path + f'{music}.mp4'
+        print(rpm)
+        self.rotation_speed = rpm
+        for c in video_clips:
+            c.set_rotation(lambda k: self.__rotation(k), expand=False)
 
-        result = CompositeVideoClip(video_clips).resized(new_size=(500, 500)).with_duration(result_duration).with_audio(audio)
+        writer = VideoWriter(
+            output_path=output_path,
+            duration=result_duration,
+            size=(500, 500)
+        )
+        writer.add_clips(video_clips)
+        writer.add_clip(audio)
 
         if add_vinyl_noise:
-            noise = AudioFileClip(get_vinyl_noise()).with_duration(result_duration)
-            audio_with_noise = CompositeAudioClip([audio, noise])
-            result = result.with_audio(audio_with_noise)
+            noise = AudioClip(
+                path=get_vinyl_noise(), 
+                duration=result_duration
+            )
+            writer.add_clip(noise)
 
-        self.rotation_speed = rpm
-        result = result.rotated(lambda k: self.__rotation(k))
-        result = result.write_videofile(result_path + f'{music}.mp4', fps=24)
+        writer.write()
 
-        return result_path + f'{music}.mp4'
+
+        return output_path

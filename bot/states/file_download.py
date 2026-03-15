@@ -25,7 +25,8 @@ def run_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, audio_name: 
     context.user_data['audio_duration'] = audio.duration
 
 async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
-    context.user_data['music_name'] = f"{uuid.uuid4()}.{audio.file_name.split('.')[-1]}"
+    music_name = f"{uuid.uuid4()}.mp3"
+    context.user_data['music_name'] = music_name
     context.user_data['audio_duration'] = audio.duration
 
     file_id = audio.file_id
@@ -40,7 +41,7 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
     save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
     makedirs(save_folder, exist_ok=True)
 
-    await new_file.download_to_drive(f'{save_folder}/{audio.file_name}')
+    await new_file.download_to_drive(f'{save_folder}/{music_name}')
     return 0
 
 async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:

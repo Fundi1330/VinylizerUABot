@@ -12,23 +12,20 @@ import uuid
 from movielite import AudioClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from bot.core.utils import get_cover_path
+from bot.core.utils import get_user_audio_path
+from pathlib import Path
 
 CONFIGURE = 0
 
 executor = ThreadPoolExecutor(max_workers=4)
 
-def run_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, audio_name: str, save_path: str):
+def run_save_audio_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, save_path: str):
     subprocess.run(cmd_args, check=True)
-    context.user_data['music_name'] = audio_name
     audio = AudioClip(save_path)
+    context.user_data['audio_path'] = save_path
     context.user_data['audio_duration'] = audio.duration
 
 async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
-    music_name = f"{uuid.uuid4()}.mp3"
-    context.user_data['music_name'] = music_name
-    context.user_data['audio_duration'] = audio.duration
-
     file_id = audio.file_id
     try:
         new_file = await context.bot.get_file(file_id)
@@ -38,10 +35,13 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
         '''
         await context.bot.send_message(chat_id=chat_id, text=text)
         return -1
-    save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
+    save_folder = get_user_audio_path(user.username, user.id)
     makedirs(save_folder, exist_ok=True)
 
-    await new_file.download_to_drive(f'{save_folder}/{music_name}')
+    audio_name = f"{uuid.uuid4()}.mp3"
+    save_path = str(Path(save_path) / audio_name)
+    await new_file.download_to_drive(save_path)
+    context.user_data['audio_path'] = save_path
     return 0
 
 async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
@@ -58,12 +58,12 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
         '''
         await context.bot.send_message(chat_id=chat_id, text=text)
         return -1
-    save_folder = f'bot/assets/user_audios/{user.username}_{user.id}/'
-    makedirs(save_folder, exist_ok=True)
+    audio_folder = get_user_audio_path(user.username, user.id)
+    makedirs(audio_folder, exist_ok=True)
 
-    video_path = await new_file.download_to_drive(f'{save_folder}/{video.file_name}')
+    video_path = await new_file.download_to_drive(str(Path(audio_folder) / video.file_name))
     audio_name = f'{uuid.uuid4()}.mp3'
-    save_path = f'{save_folder}/{audio_name}'
+    save_path = str(Path(audio_folder) / audio_name)
     ffmpeg_cmd = [
         'ffmpeg',
         '-i', video_path,
@@ -73,12 +73,11 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
         '-ar', '44100',
         '-y',
         save_path
-
     ]
 
     try:
         await asyncio.get_running_loop().run_in_executor(
-            executor, run_process, ffmpeg_cmd, context, audio_name, save_path
+            executor, run_save_audio_process, ffmpeg_cmd, context, save_path
         )
         text = '''
             📩Відео успішно завантажено!
@@ -101,11 +100,9 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
     message = await context.bot.send_message(chat_id=chat_id, text=text)
     audio_name = f'{uuid.uuid4()}'
     
-    music_folder = f'bot/assets/user_audios/{user.username}_{user.id}'
-    makedirs(music_folder, exist_ok=True)
-    save_path = f'{music_folder}/{audio_name}'
-    save_folder = get_cover_path(user.username, user.id)
-    makedirs(save_folder, exist_ok=True)
+    audio_folder = get_user_audio_path(user.username, user.id)
+    makedirs(audio_folder, exist_ok=True)
+    save_path = str(Path(audio_folder) / audio_name)
     ytdlp_cmd = [
         'yt-dlp',
         '--extract-audio',
@@ -117,16 +114,15 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
 
     try:
         await asyncio.get_running_loop().run_in_executor(
-            executor, run_process, ytdlp_cmd, context, f'{audio_name}.mp3', f'{music_folder}/{audio_name}.mp3'
+            executor, run_save_audio_process, ytdlp_cmd, context, f'{save_path}.mp3'
         )
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
         await message.edit_text(text=edited_text)
         
-        album = f"{save_path}.webp"
-        context.user_data['album'] = album
-        
+        album_path = str(Path(f"{str(Path(audio_folder) / audio_name)}.webp"))
+        context.user_data['album_path'] = album_path
     except subprocess.CalledProcessError as e:
         logger.error(f'An error occured while extracting audio from youtube video: {e}')
         edited_text = '''
@@ -137,10 +133,8 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
     return 0
     
 
-
-
 async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    '''Downloads music and asks user what he wants to do next'''
+    '''Downloads audio and asks user what he wants to do next'''
     user = get_or_create_user(update.effective_user.id)
     if user is None:
         text = '''

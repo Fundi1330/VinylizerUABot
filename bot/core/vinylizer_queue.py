@@ -6,14 +6,14 @@ from bot.core.database.utils import get_or_create_user
 from bot.config import logger
 
 class RenderJob:
-    def __init__(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, username: str, user_id: int, music_name: str, *args, **kwargs):
+    def __init__(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, username: str, user_id: int, audio_path: str, *args, **kwargs):
         self.context = context
         self.chat_id = chat_id
         self.user = {
             'username': username,
             'id': user_id
         }
-        self.music_name = music_name
+        self.audio_path = audio_path
         self.args = args
         self.kwargs = kwargs
 
@@ -47,7 +47,7 @@ class VinylizerQueue(asyncio.Queue):
                 job.chat_id,
                 job.user.get('username'),
                 job.user.get('id'),
-                job.music_name,
+                job.audio_path,
                 *job.args,
                 **job.kwargs
             )

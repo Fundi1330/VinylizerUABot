@@ -13,6 +13,9 @@ def get_vinyl_noise() -> str:
 def get_result_path(username: str, id: int) -> str:
     return str(Path(config.get('assets_path'), f'results/{username}_{id}/'))
 
+def get_user_audio_path(username: str, id: int) -> str:
+    return str(Path(config.get('assets_path'), f'user_audios/{username}_{id}/'))
+
 def get_cover_path(username: str, id: int) -> str:
     return str(Path(config.get('assets_path'), f'covers/{username}_{id}/'))
 

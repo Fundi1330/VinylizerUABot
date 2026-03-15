@@ -5,6 +5,7 @@ from bot.config import config, logger
 from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path, get_vinyl_by_name
 from tinytag import TinyTag, ParseError
 import os
+import uuid
 
 class Vinylizer:
     def __init__(self):
@@ -13,13 +14,13 @@ class Vinylizer:
     def _rotate(self, k: int, speed: int, per: int):
         return -360 * speed * (k / per)
     
-    def get_album_cover(self, user: dict, music_tag: TinyTag, music: str):
+    def get_album_cover(self, user: dict, audio_tag: TinyTag, audio: str):
         cover_path = get_cover_path(user['username'], user['id'])
 
-        if music_tag.images.any:
-            music_image = music_tag.images.any
-            cover_img = Image.open(BytesIO(music_image.data))
-            cover_path = cover_path + f'{music}.png'
+        if audio_tag.images.any:
+            audio_image = audio_tag.images.any
+            cover_img = Image.open(BytesIO(audio_image.data))
+            cover_path = cover_path + f'{audio}.png'
             cover_img.save(cover_path, format='PNG')
         else: 
             cover_img = Image.open(get_default_image())
@@ -31,7 +32,7 @@ class Vinylizer:
         self, 
         username: str, 
         user_id: int, 
-        music: str, 
+        audio_path: str, 
         vinyl_name: str = 'default', 
         use_default_image: bool = False, 
         album_cover: str = None, 
@@ -47,21 +48,19 @@ class Vinylizer:
             'id': user_id
         }
 
-        user = user
-
         vinyl = get_vinyl_by_name(vinyl_name)
         
         if vinyl is None:
             vinyl = get_vinyl_by_name('default')
 
-        music_path = config.get('assets_path') + f"user_audios/{user['username']}_{user['id']}/{music}"
-
         try:
-            music_tag = TinyTag.get(music_path)
+            audio_tag = TinyTag.get(audio_path)
         except ParseError:
-            music_tag = None
+            audio_tag = None
+        except FileNotFoundError:
+            logger.error(f'Audio file not found {audio_path}')
 
-        if use_default_image and music_tag is None:
+        if use_default_image and audio_tag is None:
             image_path = get_default_image()
         else:
             image_path = config.get('default_assets_path') + vinyl['image_without_center']
@@ -69,14 +68,14 @@ class Vinylizer:
         if album_cover:
             cover_path = album_cover
         else:
-            cover_path = self.get_album_cover(user, music_tag, music)
+            cover_path = self.get_album_cover(user, audio_tag, audio_path)
         
 
         os.makedirs(get_cover_path(user['username'], user['id']), exist_ok=True)
 
         video_clips: list[VideoClip] = []
         result_duration = 60
-        audio = AudioClip(music_path)
+        audio = AudioClip(audio_path)
         if audio.duration < 60:
             result_duration = audio.duration
         end = result_duration + start - 1
@@ -123,11 +122,10 @@ class Vinylizer:
         vinyl_clip.set_size(*size)
         video_clips.append(vinyl_clip)
 
-        music_path = config.get('assets_path') + f"user_audios/{user['username']}_{user['id']}/{music}"
-
         result_path = get_result_path(user['username'], user['id'])
         os.makedirs(result_path, exist_ok=True)
-        output_path = result_path + f'/{music}.mp4'
+        result_name = uuid.uuid4()
+        output_path = result_path + f'/{result_name}.mp4'
         for c in video_clips:
             c.set_rotation(lambda k: self._rotate(k, rpm, 60), expand=False) # Tie speed to minutes, and not the audio duration as it was before
 
@@ -150,6 +148,6 @@ class Vinylizer:
 
         if album_cover:
             os.remove(album_cover)
-        os.remove(music_path)
+        os.remove(audio_path)
 
         return output_path

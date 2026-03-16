@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardMarkup, Audio, User
+from telegram import Update, InlineKeyboardMarkup, Audio, User, Video
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.error import BadRequest
 from bot.core.database.utils import get_or_create_user
@@ -12,9 +12,11 @@ import uuid
 from movielite import AudioClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from bot.core.utils import get_user_audio_path, get_cover_path, save_audio_cover
+from bot.core.utils import get_user_audio_path, get_cover_path, save_audio_cover, get_max_duration
 from pathlib import Path
 import yt_dlp
+from babel.dates import format_timedelta
+import datetime
 
 CONFIGURE = 0
 
@@ -26,7 +28,17 @@ def run_save_audio_process(cmd_args: list, context: ContextTypes.DEFAULT_TYPE, s
     context.user_data['audio_path'] = save_path
     context.user_data['audio_duration'] = audio.duration
 
-async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
+async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User, max_duration: int) -> int:
+    if audio.duration > max_duration:
+        time_left = datetime.timedelta(seconds=max_duration)
+        text = f'''
+            ❌Довживна занадто велика. Ваш аккаунт дозволяє завантажувати максимальною довжиною в {
+                format_timedelta(time_left, format="short", locale="uk_UA")
+            }
+        '''
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        return -1
+    
     file_id = audio.file_id
     try:
         new_file = await context.bot.get_file(file_id)
@@ -50,7 +62,16 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
         context.user_data['cover_path'] = cover
     return 0
 
-async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
+async def download_video(video: Video, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User, max_duration: int) -> int:
+    if video.duration > max_duration:
+        time_left = datetime.timedelta(seconds=max_duration)
+        text = f'''
+            ❌Довживна відео занадто велика. Ваш аккаунт дозволяє завантажувати відео максимальною довжиною в {
+                format_timedelta(time_left, format="short", locale="uk_UA")
+            }
+        '''
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        return -1
     text = '''
         🔃Відео завантажується...
     '''
@@ -99,7 +120,34 @@ async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAU
         return -1
     return 0
 
-async def download_audio_from_youtube(link: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
+async def download_audio_from_youtube(link: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User, max_duration: int) -> int:
+    # Check video duration before downloading
+    def get_video_duration():
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=False)
+            return info.get('duration', 0)
+    
+    try:
+        loop = asyncio.get_running_loop()
+        video_duration = await loop.run_in_executor(executor, get_video_duration)
+        
+        if video_duration > max_duration:
+            time_left = datetime.timedelta(seconds=max_duration)
+            text = f'''
+                ❌Відео занадто велике. Ваш акаунт дозволяє завантажувати відео максимальною довжиною в {
+                    format_timedelta(time_left, format="short", locale="uk_UA")
+                }
+            '''
+            await context.bot.send_message(chat_id=chat_id, text=text)
+            return -1
+    except Exception as e:
+        logger.error(f'An error occurred while checking video duration: {e}')
+        return -1
+    
     text = '''
         🔃Відео завантажується...
     '''
@@ -175,13 +223,15 @@ async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_T
     '''Downloads audio and asks user what he wants to do next'''
     user = get_or_create_user(update.effective_user.id)
 
+    max_duration = get_max_duration(user.is_premium)
+
     result = None
     if update.message.audio:
-        result = await download_audio(update.message.audio, update.effective_chat.id, context, update.effective_user)
+        result = await download_audio(update.message.audio, update.effective_chat.id, context, update.effective_user, max_duration)
     elif update.message.video and user.is_premium:
-        result = await download_video(update.message.video, update.effective_chat.id, context, update.effective_user)
+        result = await download_video(update.message.video, update.effective_chat.id, context, update.effective_user, max_duration)
     elif update.message.text and user.is_premium:
-        result = await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user)
+        result = await download_audio_from_youtube(update.message.text, update.effective_chat.id, context, update.effective_user, max_duration)
     else:
         text = '''
             Дана функція доступна лише преміум-користувачам.

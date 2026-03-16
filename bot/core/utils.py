@@ -36,6 +36,11 @@ def get_vinyl_by_name(name: str) -> dict | None:
     for v in get_vinyl_list():
         if v['name'] == name: return v
 
+def get_max_duration(is_premium: bool) -> int:
+    if is_premium:
+        return config['max_video_duration']
+    return config['max_free_video_duration']
+
 def save_audio_cover(audio_path: str, save_path: str) -> str | None:
     '''Extracts cover tied to audio file and saves it on the disc if present'''
     try:

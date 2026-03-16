@@ -1,8 +1,14 @@
 {
     "admins": [],
-    "supported_audio_types": ["mp3", "wav", "ogg"],
+    "supported_audio_types": [
+        "mp3",
+        "wav",
+        "ogg"
+    ],
     "database_path": "/bot/core/database/database.db",
     "payload": "Test",
+    "max_video_duration": 30,
+    "max_free_video_duration": 30,
     "plans": [
         {
             "length": 1,

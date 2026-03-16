@@ -41,8 +41,6 @@ class Vinylizer:
         else:
             vinyl_path = get_default_image()
 
-        os.makedirs(get_cover_path(user['username'], user['id']), exist_ok=True)
-
         video_clips: list[VideoClip] = []
         result_duration = 60
         audio = AudioClip(audio_path)
@@ -88,7 +86,6 @@ class Vinylizer:
         video_clips.append(vinyl_clip)
 
         result_path = get_result_path(user['username'], user['id'])
-        os.makedirs(result_path, exist_ok=True)
         result_name = uuid.uuid4()
         output_path = result_path + f'/{result_name}.mp4'
         for c in video_clips:

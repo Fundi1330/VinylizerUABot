@@ -5,7 +5,6 @@ from bot.core.database.utils import get_or_create_user
 from bot.keyboards import configure_keyboard
 from .decision import CONFIGURE_DECISION
 from bot.config import config, logger
-from os import makedirs
 import os
 import subprocess
 import uuid
@@ -49,7 +48,6 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
         await context.bot.send_message(chat_id=chat_id, text=text)
         return -1
     audio_folder = get_user_audio_path(user.username, user.id)
-    makedirs(audio_folder, exist_ok=True)
 
     audio_name = f"{uuid.uuid4()}.mp3"
     audio_path = str(Path(audio_folder) / audio_name)
@@ -86,7 +84,6 @@ async def download_video(video: Video, chat_id: int, context: ContextTypes.DEFAU
         await context.bot.send_message(chat_id=chat_id, text=text)
         return -1
     audio_folder = get_user_audio_path(user.username, user.id)
-    makedirs(audio_folder, exist_ok=True)
 
     video_path = await new_file.download_to_drive(str(Path(audio_folder) / video.file_name))
     audio_name = f'{uuid.uuid4()}.mp3'
@@ -154,10 +151,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
     message = await context.bot.send_message(chat_id=chat_id, text=text)
     
     audio_folder = get_user_audio_path(user.username, user.id)
-    makedirs(audio_folder, exist_ok=True)
-    
     cover_folder = get_cover_path(user.username, user.id)
-    makedirs(cover_folder, exist_ok=True)
     
     audio_id = str(uuid.uuid4())
     audio_output_template = str(Path(audio_folder) / audio_id)

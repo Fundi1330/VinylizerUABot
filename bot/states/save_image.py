@@ -19,7 +19,6 @@ async def save_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     if context.user_data.get('cover_path'):
         os.remove(context.user_data['cover_path'])
     context.user_data['cover_path'] = cover_path
-    os.makedirs(save_folder, exist_ok=True)
 
     await photo.download_to_drive(cover_path)
 

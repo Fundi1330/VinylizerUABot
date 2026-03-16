@@ -4,6 +4,7 @@ from pathlib import Path
 from tinytag import TinyTag, ParseError
 from io import BytesIO
 from PIL import Image
+import os
 
 vinyl_map_path = Path(config.get('assets_path'), 'default', 'vinyl_map.json')
 
@@ -20,13 +21,19 @@ def get_vinyl_noise() -> str:
     return str(Path(config.get('default_assets_path'), 'vinyl_noise.mp3'))
     
 def get_result_path(username: str, id: int) -> str:
-    return str(Path(config.get('assets_path'), f'results/{username}_{id}/'))
+    path = str(Path(config.get('assets_path'), f'results/{username}_{id}/'))
+    os.makedirs(path, exist_ok=True)
+    return path
 
 def get_user_audio_path(username: str, id: int) -> str:
-    return str(Path(config.get('assets_path'), f'user_audios/{username}_{id}/'))
+    path = str(Path(config.get('assets_path'), f'user_audios/{username}_{id}/'))
+    os.makedirs(path, exist_ok=True)
+    return path
 
 def get_cover_path(username: str, id: int) -> str:
-    return str(Path(config.get('assets_path'), f'covers/{username}_{id}/'))
+    path = str(Path(config.get('assets_path'), f'covers/{username}_{id}/'))
+    os.makedirs(path, exist_ok=True)
+    return path
 
 def get_vinyl_list() -> list[dict]:
     with open(vinyl_map_path, 'r') as f:
@@ -59,6 +66,8 @@ def save_audio_cover(audio_path: str, save_path: str) -> str | None:
         try:
             audio_image = audio_tag.images.any
             cover_img = Image.open(BytesIO(audio_image.data))
+            save_dir = os.path.dirname(save_path)
+            os.makedirs(save_dir, exist_ok=True)
             cover_img.save(save_path, format='PNG')
             logger.info(f'Successfully extracted cover to {save_path}')
             return save_path

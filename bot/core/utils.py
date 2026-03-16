@@ -6,32 +6,32 @@ from io import BytesIO
 from PIL import Image
 import os
 
-vinyl_map_path = Path(config.get('assets_path'), 'default', 'vinyl_map.json')
+vinyl_map_path = Path(config.assets_path, 'default', 'vinyl_map.json')
 
 def get_vinyl_folder() -> str:
-    return str(Path(config.get('default_assets_path'), 'vinyl'))
+    return str(Path(config.default_assets_path, 'vinyl'))
 
 def get_preview_folder() -> str:
-    return str(Path(config.get('default_assets_path'), 'preview'))
+    return str(Path(config.default_assets_path, 'preview'))
 
 def get_default_image() -> str:
     return str(Path(get_vinyl_folder(), 'vinyl_default_center.png'))
     
 def get_vinyl_noise() -> str:
-    return str(Path(config.get('default_assets_path'), 'vinyl_noise.mp3'))
+    return str(Path(config.default_assets_path, 'vinyl_noise.mp3'))
     
 def get_result_path(username: str, id: int) -> str:
-    path = str(Path(config.get('assets_path'), f'results/{username}_{id}/'))
+    path = str(Path(config.assets_path, f'results/{username}_{id}/'))
     os.makedirs(path, exist_ok=True)
     return path
 
 def get_user_audio_path(username: str, id: int) -> str:
-    path = str(Path(config.get('assets_path'), f'user_audios/{username}_{id}/'))
+    path = str(Path(config.assets_path, f'user_audios/{username}_{id}/'))
     os.makedirs(path, exist_ok=True)
     return path
 
 def get_cover_path(username: str, id: int) -> str:
-    path = str(Path(config.get('assets_path'), f'covers/{username}_{id}/'))
+    path = str(Path(config.assets_path, f'covers/{username}_{id}/'))
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -45,8 +45,8 @@ def get_vinyl_by_name(name: str) -> dict | None:
 
 def get_max_duration(is_premium: bool) -> int:
     if is_premium:
-        return config['max_video_duration']
-    return config['max_free_video_duration']
+        return config.max_video_duration
+    return config.max_free_video_duration
 
 def save_audio_cover(audio_path: str, save_path: str) -> str | None:
     '''Extracts cover tied to audio file and saves it on the disc if present'''

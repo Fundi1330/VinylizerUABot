@@ -1,13 +1,18 @@
 [
     {
         "name": "default",
-        "image": "vinyl/default_center.png",
-        "image_without_center": "vinyl/default_no_center.png",
-        "preview_image": "preview/default_preview.png",
-        "album_size": {
+        "image": "default_center.png",
+        "image_without_center": "default_no_center.png",
+        "preview_image": "default_preview.png",
+        "cover_size": {
             "x": 320,
             "y": 320
         },
+        "result_size": {
+            "x": 500,
+            "y": 500
+        },
+        "is_video_note": true,
         "is_premium": false
     }
 ]

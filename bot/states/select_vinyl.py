@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from .album import ALBUM
+from .cover import COVER
 from bot.keyboards import image_keyboard
 from bot.core.utils import get_vinyl_list
 from .state_utils import send_vinyl_choice_message
@@ -41,4 +41,4 @@ async def select_vinyl_callback(update: Update, context: ContextTypes.DEFAULT_TY
     message = await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=reply_markup)
     context.user_data['message_id'] = message.id
 
-    return ALBUM
+    return COVER

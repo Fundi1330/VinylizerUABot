@@ -12,7 +12,7 @@ import uuid
 from movielite import AudioClip
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from bot.core.utils import get_user_audio_path, get_cover_path
+from bot.core.utils import get_user_audio_path, get_cover_path, save_audio_cover
 from functools import partial
 from pathlib import Path
 
@@ -36,13 +36,18 @@ async def download_audio(audio: Audio, chat_id: int, context: ContextTypes.DEFAU
         '''
         await context.bot.send_message(chat_id=chat_id, text=text)
         return -1
-    save_folder = get_user_audio_path(user.username, user.id)
-    makedirs(save_folder, exist_ok=True)
+    audio_folder = get_user_audio_path(user.username, user.id)
+    makedirs(audio_folder, exist_ok=True)
 
     audio_name = f"{uuid.uuid4()}.mp3"
-    save_path = str(Path(save_path) / audio_name)
-    await new_file.download_to_drive(save_path)
-    context.user_data['audio_path'] = save_path
+    audio_path = str(Path(audio_folder) / audio_name)
+    await new_file.download_to_drive(audio_path)
+    context.user_data['audio_path'] = audio_path
+    cover_name = f'{uuid.uuid4()}.png'
+    cover_path = str(Path(get_cover_path(user.username, user.id), cover_name))
+    cover = save_audio_cover(audio_path, cover_path)
+    if cover:
+        context.user_data['cover_path'] = cover
     return 0
 
 async def download_video(video: Audio, chat_id: int, context: ContextTypes.DEFAULT_TYPE, user: User) -> int:
@@ -111,13 +116,13 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
         '--output', audio_save_path,
         link
     ]
-    album_folder = get_cover_path(user.username, user.id)
-    album_save_path = str(Path(f"{str(Path(album_folder) / audio_name)}"))
+    cover_folder = get_cover_path(user.username, user.id)
+    cover_save_path = str(Path(f"{str(Path(cover_folder) / audio_name)}"))
     ytdlp_thumbnail_cmd = [
         'yt-dlp',
         '--write-thumbnail',
         '--skip-download',
-        '--output', album_save_path,
+        '--output', cover_save_path,
         link
     ]
 
@@ -140,7 +145,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
             )
         )
         
-        context.user_data['album_path'] = f'{album_save_path}.webp'
+        context.user_data['cover_path'] = f'{cover_save_path}.webp'
         edited_text = '''
             📩Ютуб-відео успішно завантажено!
         '''
@@ -159,7 +164,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
 async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Downloads audio and asks user what he wants to do next'''
     user = get_or_create_user(update.effective_user.id)
-    
+
     result = None
     if update.message.audio:
         result = await download_audio(update.message.audio, update.effective_chat.id, context, update.effective_user)

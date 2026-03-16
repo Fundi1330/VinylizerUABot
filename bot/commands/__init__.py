@@ -30,7 +30,7 @@ def register_handlers(app: Application):
                                               ), file_download_callback, block=False)],
             CONFIGURE_DECISION: [CallbackQueryHandler(decision_callback)],
             SELECT_VINYL: [CallbackQueryHandler(select_vinyl_callback)],
-            ALBUM: [CallbackQueryHandler(album_callback)],
+            COVER: [CallbackQueryHandler(cover_callback)],
             RPM: [CallbackQueryHandler(rpm_callback)],
             SAVE_IMAGE: [MessageHandler(filters.PHOTO, save_image_callback)],
             NOISE: [CallbackQueryHandler(noise_callback)],
@@ -42,7 +42,7 @@ def register_handlers(app: Application):
             ],
             TIME: [CallbackQueryHandler(time_state_callback)]
         },
-        fallbacks=[CommandHandler("cancel", cancel)]
+        fallbacks=[CommandHandler("cancel", cancel_command)]
     )
 
     app.add_handler(conv_handler)

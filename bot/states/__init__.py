@@ -1,6 +1,6 @@
 from .file_download import CONFIGURE, file_download_callback
 from .decision import CONFIGURE_DECISION, decision_callback
-from .album import ALBUM, album_callback
+from .cover import COVER, cover_callback
 from .rpm import RPM, rpm_callback
 from .save_image import SAVE_IMAGE, save_image_callback
 from .noise import NOISE, noise_callback

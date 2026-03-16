@@ -6,11 +6,11 @@ from bot.keyboards import rpm_keyboard
 from bot.core.utils import get_default_image
 from .save_image import SAVE_IMAGE
 
-ALBUM = 2
+COVER = 2
 
 
-async def album_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    '''Handles the result of the album image decision'''
+async def cover_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    '''Handles the result of the cover image decision'''
     query = update.callback_query
     await query.answer()
     decision = query.data

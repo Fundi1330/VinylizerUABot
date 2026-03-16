@@ -1,14 +1,12 @@
 from telegram import Update, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import ContextTypes
 from bot.keyboards import generate_time_keyboard
-from bot.config import config
-from movielite import AudioClip
 from bot.core import get_queue, RenderJob
 from bot.keyboards import vinyl_keyboard
-from bot.core.utils import get_vinyl_list
+from bot.core.utils import get_vinyl_list, get_preview_folder
 from pathlib import Path
 
-async def send_time_choice_message(update: Update, context: ContextTypes.DEFAULT_TYPE, user):
+async def send_time_choice_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     audio_length = context.user_data.get('audio_duration')
     
     reply_markup = InlineKeyboardMarkup(generate_time_keyboard(audio_length))
@@ -26,7 +24,7 @@ async def send_vinyl_choice_message(update: Update, context: ContextTypes.DEFAUL
     vinyl_list = get_vinyl_list()
     media = []
     for v in vinyl_list:
-        with open(Path(config.get('assets_path'), 'default', v['preview_image']), 'rb') as f:
+        with open(Path(get_preview_folder(), v['preview_image']), 'rb') as f:
             media.append(InputMediaPhoto(media=f.read()))
 
 
@@ -40,7 +38,7 @@ async def create_queue_task(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     username = update.effective_user.username
     user_id = update.effective_user.id
     audio_path = context.user_data.pop('audio_path')
-    album_path = context.user_data.pop('album_path', None)
+    cover_path = context.user_data.pop('cover_path', None)
     noise = context.user_data.pop('noise', False)
     rpm = context.user_data.pop('rpm', 10)
     start_time = context.user_data.pop('start_time', 0)
@@ -55,8 +53,7 @@ async def create_queue_task(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         user_id,
         audio_path,
         vinyl,
-        False,
-        album_path, 
+        cover_path, 
         noise, 
         rpm, 
         start_time

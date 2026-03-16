@@ -3,10 +3,9 @@ from telegram.ext import ContextTypes, ConversationHandler
 from bot.config import logger
 from .manual_time_choice import MANUAL_TIME_CHOICE
 from bot.core.database.utils import get_or_create_user
-from .state_utils import send_time_choice_message, create_queue_task
+from .state_utils import create_queue_task
 
 TIME = 6
-
 
 async def time_state_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Handles the result of the user's start time decision and starts the vinylization process'''

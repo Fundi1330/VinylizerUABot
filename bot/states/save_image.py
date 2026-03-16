@@ -4,7 +4,7 @@ from bot.config import logger
 from bot.core.utils import get_cover_path
 from .rpm import RPM
 from bot.keyboards import rpm_keyboard
-from os import makedirs
+import os
 import uuid
 
 SAVE_IMAGE = 4
@@ -15,8 +15,11 @@ async def save_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     photo = await update.message.photo[-1].get_file()
     save_folder = get_cover_path(update.effective_user.username, update.effective_user.id)
     album_path = f"{save_folder}/{uuid.uuid4()}.png"
+    # youtube thumbnails are automatically downloaded. If it is saved, remove the file
+    if context.user_data.get('album_path'):
+        os.remove(context.user_data['album_path'])
     context.user_data['album_path'] = album_path
-    makedirs(save_folder, exist_ok=True)
+    os.makedirs(save_folder, exist_ok=True)
 
     await photo.download_to_drive(album_path)
 
@@ -28,5 +31,4 @@ async def save_image_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data['message_id'] = message.id        
     
     return RPM
-    
     

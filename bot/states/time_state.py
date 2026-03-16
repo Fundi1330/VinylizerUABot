@@ -14,12 +14,6 @@ async def time_state_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
     start_time = None
     user = get_or_create_user(update.effective_user.id)
-    if user is None:
-        text = '''
-            Виникла помилка під час обробки вашого запиту
-        '''
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-        return ConversationHandler.END
 
     if query.data == 'manually' and user.is_premium:
         text = 'Будь ласка, надішліть тайм-код початку пісні'

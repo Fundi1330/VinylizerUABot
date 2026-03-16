@@ -10,8 +10,6 @@ pq = VinylizerQueue() # premium queue
 
 def get_queue(user_id: int) -> VinylizerQueue:
     user = get_or_create_user(user_id)
-    if user is None:
-        raise Exception('The user is None')
     if user.is_premium:
         return pq
     

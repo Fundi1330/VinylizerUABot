@@ -11,13 +11,6 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
         Дякуємо за покупку! Щасливого вам використання преміуму!
     '''
     user = get_or_create_user(update.effective_user.id)
-    if user is None:
-        text = '''
-            Сталася помилка під час обробки вашого замовлення
-        '''
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-        return
-    
 
     premium = user.premium
     if premium is None:

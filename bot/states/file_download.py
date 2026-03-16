@@ -159,12 +159,7 @@ async def download_audio_from_youtube(link: str, chat_id: int, context: ContextT
 async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Downloads audio and asks user what he wants to do next'''
     user = get_or_create_user(update.effective_user.id)
-    if user is None:
-        text = '''
-            Виникла помилка під час обробки вашого запиту
-        '''
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-        return ConversationHandler.END
+    
     result = None
     if update.message.audio:
         result = await download_audio(update.message.audio, update.effective_chat.id, context, update.effective_user)

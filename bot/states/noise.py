@@ -25,7 +25,7 @@ async def noise_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await context.bot.edit_message_text(text='❌Вініловий шум НЕ буде додано до відео!', chat_id=update.effective_chat.id,
                                             message_id=message_id, reply_markup=None)
 
-    await send_time_choice_message(update, context, user)
+    await send_time_choice_message(update, context)
 
     return TIME
     

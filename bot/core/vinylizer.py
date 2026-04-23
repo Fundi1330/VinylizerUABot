@@ -2,6 +2,7 @@ from movielite import ImageClip, AudioClip, VideoWriter, VideoClip
 from .utils import get_default_image, get_vinyl_noise, get_cover_path, get_result_path, get_vinyl_by_name, get_vinyl_folder
 import os
 import uuid
+import math
 from pathlib import Path
 
 class Vinylizer:
@@ -10,6 +11,12 @@ class Vinylizer:
 
     def _rotate(self, k: int, speed: int, per: int):
         return -360 * speed * (k / per)
+
+    def _rotation_offset(self, width: int, height: int, angle_deg: float):
+        rad = math.radians(angle_deg)
+        new_w = abs(width * math.cos(rad)) + abs(height * math.sin(rad))
+        new_h = abs(width * math.sin(rad)) + abs(height * math.cos(rad))
+        return (new_w - width) / 2, (new_h - height) / 2
 
     def vinylize(
         self, 
@@ -39,7 +46,7 @@ class Vinylizer:
         if cover_path:
             vinyl_path = str(Path(get_vinyl_folder(), vinyl['image_without_center']))
         else:
-            vinyl_path = get_default_image()
+            vinyl_path = str(Path(get_vinyl_folder(), vinyl['image']))
 
         video_clips: list[VideoClip] = []
         result_duration = 60
@@ -60,6 +67,7 @@ class Vinylizer:
         h, w = background.size
         video_clips.append(background)
 
+        angle_fn = lambda k: self._rotate(k, rpm, 60)
         if cover_path:
             cover = ImageClip(
                 source=cover_path,
@@ -74,22 +82,28 @@ class Vinylizer:
             cover.set_size(aw, ah)
             cover_x = (w - aw) / 2
             cover_y = (h - ah) / 2
-            cover.set_position((cover_x, cover_y))
+            cover.set_rotation(angle_fn, expand=True)
+            cover.set_position(
+                lambda k: (
+                    cover_x - self._rotation_offset(aw, ah, angle_fn(k))[0],
+                    cover_y - self._rotation_offset(aw, ah, angle_fn(k))[1]
+                )
+            )
             video_clips.append(cover)
 
         vinyl_clip = ImageClip(
             source=vinyl_path,
             duration=result_duration
         )
-        vinyl_clip.set_position((0, 0))
         vinyl_clip.set_size(*size)
+        if cover_path:
+            vinyl_clip.set_opacity(vinyl['transparency'])
+        vinyl_clip.set_rotation(angle_fn, expand=False)
         video_clips.append(vinyl_clip)
 
         result_path = get_result_path(user['username'], user['id'])
         result_name = uuid.uuid4()
         output_path = result_path + f'/{result_name}.mp4'
-        for c in video_clips:
-            c.set_rotation(lambda k: self._rotate(k, rpm, 60), expand=False) # Tie speed to minutes, and not the audio duration as it was before
 
         writer = VideoWriter(
             output_path=output_path,

@@ -12,6 +12,24 @@
             "x": 500,
             "y": 500
         },
+        "transparency": 1,
+        "is_video_note": true,
+        "is_premium": false
+    },
+    {
+        "name": "default_transparent",
+        "image": "default_transparent_center.png",
+        "image_without_center": "default_transparent_no_center.png",
+        "preview_image": "default_transparent_preview.png",
+        "cover_size": {
+            "x": 500,
+            "y": 500
+        },
+        "result_size": {
+            "x": 500,
+            "y": 500
+        },
+        "transparency": 0.35,
         "is_video_note": true,
         "is_premium": false
     }

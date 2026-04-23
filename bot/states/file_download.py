@@ -212,7 +212,12 @@ async def file_download_callback(update: Update, context: ContextTypes.DEFAULT_T
         '''
         await context.bot.send_message(chat_id=chat_id, text=text)
         return ConversationHandler.END
-    
+    except Exception:
+        text = '''
+            ❌Під час завантаження виникла помилка! Спробуйте знову
+        '''
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        return ConversationHandler.END
 
     text = '''
     Оберіть, що ви хочете робити далі👇.
